@@ -8,15 +8,11 @@
 <title>ZoomBird</title>
 <script>
 var ua = navigator.userAgent;
-var w = Math.min(screen.width, screen.height);
-// Phone: small screen + touch UA. Tablets and desktops go to desktop version.
-var isPhone = (
-  /iPhone|iPod/i.test(ua) ||
-  (/Android/i.test(ua) && /Mobile/i.test(ua)) ||
-  (/Android/i.test(ua) && w < 600)
-);
-// Safety: if screen is wide (tablet/desktop), never go mobile
-if (w >= 768) isPhone = false;
+// UA detection first - most reliable
+var isPhone = /iPhone|iPod/i.test(ua) || (/Android/i.test(ua) && /Mobile/i.test(ua));
+// iPad (including modern iPadOS reporting as Mac) → desktop
+// Android tablet (Android without Mobile) → desktop
+// Everything else → desktop
 var target = isPhone ? 'mobile.html' : 'desktop.html';
 window.location.replace(target);
 </script>
