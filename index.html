@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ZoomBird</title>
 <script>
-var m = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-window.location.replace(m ? 'mobile.html' : 'desktop.html');
+var ua = navigator.userAgent;
+var isPhone = /iPhone|iPod/i.test(ua) || (/Android/i.test(ua) && /Mobile/i.test(ua));
+window.location.replace(isPhone ? 'mobile.html' : 'desktop.html');
 </script>
 </head>
 <body></body>
