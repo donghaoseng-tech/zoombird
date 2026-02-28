@@ -18,15 +18,45 @@ canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-acti
   cursor: pointer; touch-action: manipulation;
 }
 #pauseBtn:active { background: rgba(232,236,242,0.32); }
+#restartDialog {
+  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 200;
+  background: rgba(49,53,64,0.65); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  flex-direction: column; align-items: center; justify-content: center;
+}
+#restartDialog.show { display: flex; }
+#restartDialog .dlg-title {
+  font-family: "Montserrat","Arial Black","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size: 28px; font-weight: 900; color: #e8ecf2; margin-bottom: 8px;
+}
+#restartDialog .dlg-score {
+  font-family: "Montserrat","Arial Black","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size: 18px; font-weight: 700; color: rgb(212,214,220); margin-bottom: 24px;
+}
+#restartDialog .dlg-btn {
+  width: 160px; height: 48px; border: 0; border-radius: 24px;
+  background: rgb(164,214,69); color: rgb(49,53,64);
+  font-family: "Montserrat","Arial Black","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size: 17px; font-weight: 800; cursor: pointer; touch-action: manipulation;
+}
+#restartDialog .dlg-btn:active { background: rgb(140,190,50); }
 </style>
 </head>
 <body>
 <canvas id="game" width="540" height="960" aria-label="ZOOMBIRD"></canvas>
 <button id="pauseBtn" type="button">⏸</button>
+<div id="restartDialog">
+  <div class="dlg-title" id="dlgTitle">你的小鸟坠机了</div>
+  <div class="dlg-score" id="dlgScore">得分: 0</div>
+  <button class="dlg-btn" id="dlgRestartBtn" type="button">重新开始</button>
+</div>
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const pauseBtn = document.getElementById('pauseBtn');
+const restartDialog = document.getElementById('restartDialog');
+const dlgTitle = document.getElementById('dlgTitle');
+const dlgScore = document.getElementById('dlgScore');
+const dlgRestartBtn = document.getElementById('dlgRestartBtn');
 
 const THEME = {
   zoomGreen: 'rgb(164, 214, 69)',
@@ -268,9 +298,12 @@ function spawnPipe() {
 function failRun(reasonKey) {
   if(state.status==='dead') return;
   state.status='dead'; setMessage('msg_fail',{reason:t(reasonKey)}); saveScore(state.score);
+  dlgTitle.textContent=t('overlay_dead');
+  dlgScore.textContent=t('overlay_score',{score:state.score});
+  restartDialog.classList.add('show');
 }
 function flap() {
-  if(state.status==='dead') { resetRun(); startRun(); }
+  if(state.status==='dead') return;
   if(state.status==='ready') startRun();
   if(state.status!=='running') return;
   state.bird.vy=PHYSICS.flapImpulse;
@@ -390,13 +423,7 @@ function drawOverlay() {
     ctx.fillText(t('overlay_pause_hint'),state.viewW*0.5,state.viewH*0.51);
   }
   if(state.status==='dead') {
-    ctx.fillStyle='rgba(49,53,64,0.6)'; ctx.fillRect(0,0,state.viewW,state.viewH);
-    ctx.fillStyle=THEME.softWhite; ctx.textAlign='center'; ctx.font=brandFontPx(34,900);
-    ctx.fillText(t('overlay_dead'),state.viewW*0.5,state.viewH*0.40);
-    ctx.fillStyle='rgb(212,214,220)'; ctx.font=brandFontPx(18,700);
-    ctx.fillText(t('overlay_score',{score:state.score}),state.viewW*0.5,state.viewH*0.46);
-    ctx.font=brandFontPx(15,700);
-    ctx.fillText(t('overlay_restart'),state.viewW*0.5,state.viewH*0.52);
+    // dialog handles restart UI
   }
 }
 function draw() {
@@ -426,6 +453,16 @@ pauseBtn.addEventListener('pointerdown',function(e){
 pauseBtn.addEventListener('click',function(e){
   e.stopPropagation();
   togglePause();
+});
+
+restartDialog.addEventListener('pointerdown',function(e){
+  e.stopPropagation(); e.preventDefault();
+},{passive:false});
+dlgRestartBtn.addEventListener('click',function(e){
+  e.stopPropagation();
+  restartDialog.classList.remove('show');
+  resetRun();
+  startRun();
 });
 
 window.addEventListener('resize',function(){ resizeCanvas(); });

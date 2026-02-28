@@ -748,7 +748,7 @@ const I18N = {
     overlay_pause_hint: '按 P 继续',
     overlay_dead: '你的小鸟坠机了',
     overlay_score: '得分: {score}',
-    overlay_restart: '点击屏幕或按空格重开',
+    overlay_restart: '按 M 键重新开始',
     overlay_hint: 'P 暂停 | F 全屏 | T 主题 | D 门户',
     canvas_score: '得分',
     portal_tip: '按 Y 返回游戏'
@@ -795,7 +795,7 @@ const I18N = {
     overlay_pause_hint: 'Press P to continue',
     overlay_dead: 'Your bird crashed',
     overlay_score: 'Score: {score}',
-    overlay_restart: 'Tap screen or press Space to restart',
+    overlay_restart: 'Press M to restart',
     overlay_hint: 'P Pause | F Fullscreen | T Theme | D Portal',
     canvas_score: 'Score',
     portal_tip: 'Press Y to return to game'
@@ -842,7 +842,7 @@ const I18N = {
     overlay_pause_hint: 'Pulsa P para continuar',
     overlay_dead: 'Tu pájaro se estrelló',
     overlay_score: 'Puntuación: {score}',
-    overlay_restart: 'Toca la pantalla o pulsa Espacio para reiniciar',
+    overlay_restart: 'Pulsa M para reiniciar',
     overlay_hint: 'P Pausa | F Pantalla completa | T Tema | D Portal',
     canvas_score: 'Puntos',
     portal_tip: 'Pulsa Y para volver al juego'
@@ -889,7 +889,7 @@ const I18N = {
     overlay_pause_hint: 'Нажмите P, чтобы продолжить',
     overlay_dead: 'Птичка разбилась',
     overlay_score: 'Счёт: {score}',
-    overlay_restart: 'Коснитесь экрана или нажмите Space для рестарта',
+    overlay_restart: 'Нажмите M для рестарта',
     overlay_hint: 'P Пауза | F Экран | T Тема | D Портал',
     canvas_score: 'Счёт',
     portal_tip: 'Нажмите Y, чтобы вернуться в игру'
@@ -1439,10 +1439,7 @@ function failRun(reasonKey) {
 function flap() {
   if (state.portalOpen) return;
   if (state.status === 'paused') return;
-  if (state.status === 'dead') {
-    resetRun();
-    startRun();
-  }
+  if (state.status === 'dead') return;
   if (state.status === 'ready') startRun();
   if (state.status !== 'running') return;
 
@@ -1907,17 +1904,7 @@ function drawOverlay() {
   }
 
   if (state.status === 'dead') {
-    ctx.fillStyle = 'rgba(49, 53, 64, 0.6)';
-    ctx.fillRect(0, 0, state.viewW, state.viewH);
-    ctx.fillStyle = THEME.softWhite;
-    ctx.textAlign = 'center';
-    ctx.font = brandFontPx(42, 900);
-    ctx.fillText(t('overlay_dead'), state.viewW * 0.5, state.viewH * 0.43);
-    ctx.fillStyle = 'rgb(212, 214, 220)';
-    ctx.font = brandFontPx(22, 700);
-    ctx.fillText(t('overlay_score', { score: state.score }), state.viewW * 0.5, state.viewH * 0.50);
-    ctx.font = brandFontPx(18, 700);
-    ctx.fillText(t('overlay_restart'), state.viewW * 0.5, state.viewH * 0.57);
+    // no overlay, just press M to restart
   }
 }
 
@@ -1995,10 +1982,16 @@ window.addEventListener('keydown', function(e) {
     e.preventDefault();
     exitPortalMode();
   }
+  if ((c === 'KeyM' || k === 'm') && state.status === 'dead') {
+    e.preventDefault();
+    resetRun();
+    startRun();
+  }
 });
 
 restartBtn.addEventListener('click', function() {
   resetRun();
+  startRun();
 });
 
 pauseBtn.addEventListener('click', function() {
