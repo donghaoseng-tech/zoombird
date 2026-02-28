@@ -1774,9 +1774,11 @@ function drawPipe(pipe) {
   const bottomY = pipe.gapY + pipe.gapH * 0.5;
   const bottomH = groundY() - bottomY;
 
-  ctx.fillStyle = THEME.pipeGreen;
-  ctx.fillRect(pipe.x, 0, pipe.width, topH);
-  ctx.fillRect(pipe.x, bottomY, pipe.width, bottomH);
+  if (state.themeMode !== 'office') {
+    ctx.fillStyle = THEME.pipeGreen;
+    ctx.fillRect(pipe.x, 0, pipe.width, topH);
+    ctx.fillRect(pipe.x, bottomY, pipe.width, bottomH);
+  }
 
   ctx.fillStyle = THEME.midGray;
   ctx.fillRect(pipe.x - 4, topH - 12, pipe.width + 8, 12);
