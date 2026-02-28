@@ -1,0 +1,2312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>ZOOMBIRD</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Noto+Sans+SC:wght@500;700;900&display=swap');
+:root {
+  --aurora-green: rgb(164, 214, 69);
+  --pipe-green: rgb(146, 208, 80);
+  --gravel-gray: rgb(132, 136, 145);
+  --star-gray: rgb(49, 53, 64);
+  --paper-gray: rgb(23, 27, 35);
+  --cloud-white: rgb(232, 236, 242);
+  --brand-font: "Montserrat", "Arial Black", "Avenir Next Condensed", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  min-height: 100dvh;
+  font-family: var(--brand-font);
+  color: var(--cloud-white);
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(164, 214, 69, 0.16) 0%, rgba(19, 23, 31, 0) 58%),
+    linear-gradient(180deg, rgb(16, 20, 28) 0%, rgb(23, 27, 35) 56%, rgb(30, 35, 45) 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px;
+}
+.wrap {
+  width: min(1120px, 100%);
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 0;
+  background: rgba(15, 18, 24, 0.76);
+  border: 1px solid rgba(132, 136, 145, 0.34);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.36);
+}
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 0;
+  background: linear-gradient(180deg, rgba(32, 37, 47, 0.95) 0%, rgba(26, 31, 41, 0.92) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 18px rgba(0, 0, 0, 0.22);
+}
+.title-bar {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border-radius: 0;
+  border: 1px solid rgba(132, 136, 145, 0.42);
+  background: linear-gradient(180deg, rgba(42, 48, 60, 0.95) 0%, rgba(34, 39, 50, 0.95) 100%);
+}
+h1 {
+  font-size: clamp(1.4rem, 3.8vw, 2.1rem);
+  letter-spacing: 1.4px;
+  font-weight: 900;
+  color: var(--aurora-green);
+}
+.title-accent {
+  height: 8px;
+  border-radius: 0;
+  background: linear-gradient(90deg, rgba(99, 104, 115, 0.78) 0%, rgba(127, 133, 145, 0.88) 58%, rgba(164, 214, 69, 0.78) 100%);
+  opacity: 0.92;
+}
+.hud {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.hud-item {
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid rgba(132, 136, 145, 0.42);
+  border-radius: 0;
+  background: rgba(24, 28, 36, 0.95);
+  color: var(--cloud-white);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.24);
+  font-size: 0.92rem;
+}
+.hud-item span { font-weight: 700; color: var(--aurora-green); }
+.game-shell {
+  border-radius: 0;
+  border: 2px solid rgba(132, 136, 145, 0.55);
+  overflow: hidden;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.34);
+  background: var(--paper-gray);
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  background: var(--paper-gray);
+  touch-action: none;
+}
+.game-shell:fullscreen,
+.game-shell:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  border-radius: 0;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(8, 11, 16);
+}
+.game-shell:fullscreen canvas,
+.game-shell:-webkit-full-screen canvas {
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  aspect-ratio: 16 / 9;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+button {
+  border: 0;
+  border-radius: 0;
+  padding: 10px 16px;
+  font-size: 0.93rem;
+  font-weight: 700;
+  color: rgb(18, 23, 30);
+  cursor: pointer;
+  background: var(--aurora-green);
+}
+button.secondary { background: rgba(76, 82, 94, 0.95); color: var(--cloud-white); }
+button:active { transform: translateY(1px); }
+.lang-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--cloud-white);
+  font-size: 0.86rem;
+}
+#langSelect {
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 1px solid rgba(132, 136, 145, 0.55);
+  border-radius: 0;
+  background: rgba(24, 28, 36, 0.95);
+  color: var(--cloud-white);
+  font-family: var(--brand-font);
+  font-size: 0.86rem;
+}
+#msg {
+  min-height: 1.5em;
+  color: var(--cloud-white);
+  font-size: 0.9rem;
+}
+.controls {
+  line-height: 1.45;
+  font-size: 0.88rem;
+  color: rgb(191, 197, 208);
+}
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 0;
+  background: linear-gradient(180deg, rgba(39, 45, 57, 0.95) 0%, rgba(31, 36, 47, 0.95) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 18px rgba(0, 0, 0, 0.24);
+}
+.panel {
+  padding: 10px;
+  border: 1px solid rgba(132, 136, 145, 0.42);
+  border-radius: 0;
+  background: rgba(24, 28, 36, 0.95);
+  color: rgb(212, 216, 224);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.24);
+}
+.panel h2 {
+  font-size: 1rem;
+  color: var(--aurora-green);
+  margin-bottom: 8px;
+}
+#rankList {
+  padding-left: 20px;
+  display: grid;
+  gap: 5px;
+  font-size: 0.9rem;
+}
+@media (max-width: 980px) {
+  .wrap { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .hud { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.portal-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 9999;
+  background: rgb(217, 217, 217);
+  overflow: auto;
+}
+.portal-overlay.active {
+  display: block;
+}
+.portal-static {
+  width: 100%;
+  min-height: 100%;
+  background: rgb(217, 217, 217);
+  color: rgb(33, 36, 42);
+  font-family: "Arial", "Helvetica Neue", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+.portal-static-page {
+  width: min(1880px, 100%);
+  min-height: 100%;
+  margin: 0 auto;
+  background: rgb(217, 217, 217);
+}
+.portal-static-header {
+  height: 86px;
+  background: rgb(255, 255, 255);
+  border-bottom: 1px solid rgb(226, 226, 226);
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  padding: 0 18px;
+}
+.portal-static-logo {
+  width: 150px;
+  height: 48px;
+  object-fit: contain;
+  display: block;
+  flex: 0 0 auto;
+}
+.portal-static-nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(20px, 1.5vw, 40px);
+  font-size: clamp(13px, 0.95vw, 19px);
+  font-weight: 700;
+  color: rgb(52, 57, 65);
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.portal-static-nav span {
+  letter-spacing: 0;
+}
+.portal-static-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: clamp(12px, 0.92vw, 18px);
+  font-weight: 700;
+  color: rgb(39, 44, 52);
+  flex: 0 0 auto;
+}
+.portal-static-icon {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgb(39, 44, 52);
+  border-radius: 0;
+  display: inline-block;
+  position: relative;
+}
+.portal-static-icon.search::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 2px;
+  background: rgb(39, 44, 52);
+  right: -6px;
+  bottom: -2px;
+  transform: rotate(45deg);
+}
+.portal-static-divider {
+  width: 1px;
+  height: 24px;
+  background: rgb(194, 194, 194);
+}
+.portal-static-right-label {
+  letter-spacing: 0.4px;
+}
+.portal-static-menu {
+  width: 52px;
+  height: 52px;
+  background: var(--aurora-green);
+  display: grid;
+  place-items: center;
+}
+.portal-static-menu::before,
+.portal-static-menu::after,
+.portal-static-menu span {
+  content: "";
+  display: block;
+  width: 24px;
+  height: 3px;
+  background: rgb(255, 255, 255);
+}
+.portal-static-menu::before { margin-bottom: 4px; }
+.portal-static-menu span { margin-bottom: 4px; }
+.portal-static-hero {
+  position: relative;
+  height: min(49vh, 456px);
+  overflow: hidden;
+  background: rgb(203, 203, 203);
+}
+.portal-static-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.portal-static-indicator {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  font-size: clamp(20px, 2vw, 34px);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+.portal-static-indicator .is-active {
+  color: var(--aurora-green);
+}
+.portal-static-indicator-bar {
+  width: 184px;
+  height: 14px;
+  background: rgba(173, 218, 72, 0.24);
+  position: relative;
+}
+.portal-static-indicator-bar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 36px;
+  height: 14px;
+  background: var(--aurora-green);
+}
+.portal-static-body {
+  padding: 26px 22px 38px;
+  background: rgb(217, 217, 217);
+}
+.portal-static-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 330px) repeat(3, minmax(220px, 1fr));
+  gap: clamp(10px, 1vw, 20px);
+}
+.portal-static-panel,
+.portal-static-card {
+  background: rgb(232, 232, 232);
+  border: 1px solid rgb(206, 206, 206);
+  min-height: 290px;
+  padding: 18px;
+}
+.portal-static-panel .title {
+  font-size: clamp(19px, 1.6vw, 24px);
+  font-weight: 800;
+  color: rgb(145, 182, 64);
+  margin-bottom: 22px;
+  text-transform: uppercase;
+}
+.portal-static-panel .line {
+  height: 1px;
+  background: rgb(206, 206, 206);
+  margin-bottom: 18px;
+}
+.portal-static-panel .sub {
+  font-size: clamp(15px, 1.2vw, 18px);
+  font-weight: 700;
+  color: rgb(63, 66, 72);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.portal-static-panel ul {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+.portal-static-panel li {
+  font-size: clamp(12px, 0.9vw, 14px);
+  color: rgb(102, 106, 114);
+}
+.portal-static-card {
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  justify-items: center;
+}
+.portal-static-card img {
+  width: 90%;
+  max-height: 188px;
+  object-fit: contain;
+  align-self: center;
+}
+.portal-static-card .name {
+  font-size: clamp(18px, 1.45vw, 24px);
+  font-weight: 500;
+  color: rgb(63, 66, 72);
+  margin-top: 12px;
+}
+.portal-static-card .type {
+  font-size: clamp(12px, 0.95vw, 16px);
+  font-weight: 700;
+  color: rgb(145, 182, 64);
+  margin-top: 14px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.portal-tip {
+  position: fixed;
+  right: 14px;
+  bottom: 12px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.75);
+  color: rgb(255, 255, 255);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 0;
+  font-size: 0.82rem;
+  letter-spacing: 0.4px;
+  z-index: 10000;
+  display: none;
+}
+.portal-overlay.active .portal-tip {
+  display: block;
+}
+.mobile-controls {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9000;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  background: rgba(18, 22, 30, 0.96);
+  border-top: 1px solid rgba(132, 136, 145, 0.5);
+}
+.mobile-controls button {
+  min-height: 54px;
+  padding: 0 4px;
+  border: 0;
+  border-right: 1px solid rgba(132, 136, 145, 0.35);
+  background: transparent;
+  color: var(--cloud-white);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+.mobile-controls button:last-child {
+  border-right: 0;
+}
+.mobile-controls button.primary {
+  background: rgba(164, 214, 69, 0.96);
+  color: rgb(17, 22, 30);
+}
+.rotate-hint {
+  position: fixed;
+  inset: 0;
+  z-index: 8000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 14, 20, 0.8);
+}
+.rotate-hint.active {
+  display: flex;
+}
+.rotate-hint .box {
+  padding: 12px 14px;
+  border: 1px solid rgba(132, 136, 145, 0.6);
+  background: rgba(20, 25, 34, 0.96);
+  color: var(--cloud-white);
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-align: center;
+}
+@media (max-width: 1200px) {
+  .portal-static-header {
+    gap: 18px;
+  }
+  .portal-static-nav {
+    gap: 14px;
+  }
+}
+@media (max-width: 900px) {
+  .portal-static-nav span:nth-child(n+5) {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  .portal-static-header {
+    height: 70px;
+    padding: 0 10px;
+    gap: 10px;
+  }
+  .portal-static-logo {
+    width: 120px;
+    height: 36px;
+  }
+  .portal-static-nav span:nth-child(n+3) {
+    display: none;
+  }
+  .portal-static-menu {
+    width: 40px;
+    height: 40px;
+  }
+  .portal-static-menu::before,
+  .portal-static-menu::after,
+  .portal-static-menu span {
+    width: 18px;
+  }
+  .portal-static-hero {
+    height: min(32vh, 240px);
+  }
+  .portal-static-indicator {
+    gap: 12px;
+    bottom: 12px;
+  }
+  .portal-static-indicator-bar {
+    width: 90px;
+    height: 8px;
+  }
+  .portal-static-indicator-bar::after {
+    width: 26px;
+    height: 8px;
+  }
+  .portal-static-body {
+    padding: 14px 10px 16px;
+  }
+  .portal-static-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .portal-static-panel,
+  .portal-static-card {
+    min-height: auto;
+    padding: 12px;
+  }
+  .portal-static-card img {
+    max-height: 130px;
+  }
+}
+@media (max-width: 900px) {
+  body {
+    padding: 0;
+    align-items: stretch;
+  }
+  .wrap {
+    width: 100%;
+    min-height: 100dvh;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 6px;
+    border: 0;
+    box-shadow: none;
+    background: rgba(14, 18, 24, 0.98);
+  }
+  .main {
+    padding: 8px;
+    gap: 8px;
+  }
+  .title-bar {
+    padding: 8px 10px 10px;
+  }
+  h1 {
+    font-size: clamp(1.2rem, 7.2vw, 1.8rem);
+    letter-spacing: 1px;
+  }
+  .title-accent {
+    height: 6px;
+  }
+  .hud {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .hud-item {
+    min-height: 38px;
+    padding: 6px 8px;
+    font-size: 0.82rem;
+  }
+  .game-shell {
+    border-width: 1px;
+  }
+  canvas {
+    width: 100%;
+    max-height: min(62vh, calc(100dvh - 286px));
+  }
+  .actions {
+    display: none;
+  }
+  .side {
+    display: none;
+  }
+  #msg {
+    min-height: 1.32em;
+    font-size: 0.8rem;
+  }
+  .controls {
+    font-size: 0.75rem;
+    line-height: 1.32;
+    padding-bottom: 2px;
+  }
+  body {
+    padding-bottom: 56px;
+  }
+  .mobile-controls {
+    display: grid;
+  }
+}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="main">
+      <div class="title-bar">
+        <h1>ZOOMBIRD</h1>
+        <div class="title-accent" aria-hidden="true"></div>
+      </div>
+
+      <div class="hud">
+        <div class="hud-item"><span id="labelScore">得分</span>: <span id="hudScore">0</span></div>
+        <div class="hud-item"><span id="labelSpeed">速度</span>: <span id="hudSpeed">0</span></div>
+        <div class="hud-item"><span id="labelBest">最佳</span>: <span id="hudBest">0</span></div>
+        <div class="hud-item"><span id="labelState">状态</span>: <span id="hudState">待开始</span></div>
+      </div>
+
+      <div id="gameShell" class="game-shell">
+        <canvas id="game" width="960" height="540" aria-label="ZOOMBIRD"></canvas>
+      </div>
+
+      <div class="actions">
+        <button id="restartBtn" type="button">重新开始</button>
+        <button id="pauseBtn" class="secondary" type="button">暂停/继续 (P)</button>
+        <button id="fullscreenBtn" class="secondary" type="button">全屏 (F)</button>
+        <label class="lang-wrap" for="langSelect">
+          <span id="langLabel">语言</span>
+          <select id="langSelect">
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="ru">Русский</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="msg">点击屏幕或按空格开始飞行</div>
+      <div class="controls">
+        <span id="controlsLine1">操作: 点击屏幕/空格上升，不操作会下坠。</span><br />
+        <span id="controlsLine2">规则: 撞柱子或落地即失败。通过柱子数量计分，越后面速度越快。</span>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="panel">
+        <h2 id="rankTitle">飞行部队飞行绩效得分表</h2>
+        <ol id="rankList"></ol>
+      </div>
+      <div class="panel">
+        <h2 id="tipsTitle">提示</h2>
+        <div style="font-size:0.88rem; line-height:1.5; color:rgb(191, 197, 208);">
+          <span id="tipsLine1">点击屏幕或空格上升</span><br />
+          <span id="tipsLine2">P 键暂停 / 继续</span><br />
+          <span id="tipsLine3">F 键全屏 / 退出全屏</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="mobileControls" class="mobile-controls" aria-label="Mobile controls">
+    <button id="mobileFlapBtn" class="primary" type="button">跳跃</button>
+    <button id="mobilePauseBtn" type="button">暂停</button>
+    <button id="mobileRestartBtn" type="button">重开</button>
+    <button id="mobileThemeBtn" type="button">主题</button>
+    <button id="mobilePortalBtn" type="button">门户</button>
+  </div>
+  <div id="rotateHint" class="rotate-hint" aria-hidden="true">
+    <div id="rotateHintText" class="box">建议横屏体验</div>
+  </div>
+
+  <div id="portalOverlay" class="portal-overlay" aria-hidden="true">
+    <div class="portal-static" aria-label="ZOOMLION portal screenshot style">
+      <div class="portal-static-page">
+        <div class="portal-static-header">
+          <img class="portal-static-logo" src="./Products-ZOOMLION_files/08175f66973246398cb2f48e6ebbb39b.png" alt="ZOOMLION" />
+          <div class="portal-static-nav">
+            <span>Products</span>
+            <span>Service</span>
+            <span>Construction Cases</span>
+            <span>Investor</span>
+            <span>News</span>
+            <span>About Zoomlion</span>
+            <span>Contact</span>
+          </div>
+          <div class="portal-static-right">
+            <span class="portal-static-icon search" aria-hidden="true"></span>
+            <span class="portal-static-right-label">EN</span>
+            <span class="portal-static-divider" aria-hidden="true"></span>
+            <span class="portal-static-menu" aria-hidden="true"><span></span></span>
+          </div>
+        </div>
+        <div class="portal-static-hero">
+          <img src="./Products-ZOOMLION_files/31247e7d279041a59e7680867b974fe9.jpg" alt="ZOOMLION products" />
+          <div class="portal-static-indicator" aria-hidden="true">
+            <span class="is-active">01</span>
+            <span class="portal-static-indicator-bar"></span>
+            <span>02</span>
+            <span>03</span>
+          </div>
+        </div>
+        <div class="portal-static-body">
+          <div class="portal-static-grid">
+            <div class="portal-static-panel">
+              <div class="title">Quickly Find</div>
+              <div class="line"></div>
+              <div class="sub">Earthmoving Machinery</div>
+              <ul>
+                <li>Mini Excavator</li>
+                <li>Hydraulic Excavator</li>
+                <li>Crawler Excavator</li>
+                <li>Skid Steer Loader</li>
+              </ul>
+            </div>
+            <div class="portal-static-card">
+              <img src="./Products-ZOOMLION_files/5f97e517fac74b3aab4be8bc46920c10.png" alt="ZWL75G" />
+              <div class="name">ZWL75G</div>
+              <div class="type">Mini Excavator</div>
+            </div>
+            <div class="portal-static-card">
+              <img src="./Products-ZOOMLION_files/5138b1b6b055420fa59f4e9cdda1fb42.png" alt="ZWL62G" />
+              <div class="name">ZWL62G</div>
+              <div class="type">Mini Excavator</div>
+            </div>
+            <div class="portal-static-card">
+              <img src="./Products-ZOOMLION_files/d42eaaa3f95944f6bd151be6b2cd86ab.png" alt="ZWL75GE" />
+              <div class="name">ZWL75GE</div>
+              <div class="type">Mini Excavator</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="portalTip" class="portal-tip">按 Y 返回游戏</div>
+  </div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const gameShell = document.getElementById('gameShell');
+
+const hudScore = document.getElementById('hudScore');
+const hudSpeed = document.getElementById('hudSpeed');
+const hudBest = document.getElementById('hudBest');
+const hudState = document.getElementById('hudState');
+const msgEl = document.getElementById('msg');
+const rankListEl = document.getElementById('rankList');
+const labelScoreEl = document.getElementById('labelScore');
+const labelSpeedEl = document.getElementById('labelSpeed');
+const labelBestEl = document.getElementById('labelBest');
+const labelStateEl = document.getElementById('labelState');
+const langLabelEl = document.getElementById('langLabel');
+const langSelectEl = document.getElementById('langSelect');
+const controlsLine1El = document.getElementById('controlsLine1');
+const controlsLine2El = document.getElementById('controlsLine2');
+const rankTitleEl = document.getElementById('rankTitle');
+const tipsTitleEl = document.getElementById('tipsTitle');
+const tipsLine1El = document.getElementById('tipsLine1');
+const tipsLine2El = document.getElementById('tipsLine2');
+const tipsLine3El = document.getElementById('tipsLine3');
+const portalOverlay = document.getElementById('portalOverlay');
+const portalTipEl = document.getElementById('portalTip');
+const mobileFlapBtn = document.getElementById('mobileFlapBtn');
+const mobilePauseBtn = document.getElementById('mobilePauseBtn');
+const mobileRestartBtn = document.getElementById('mobileRestartBtn');
+const mobileThemeBtn = document.getElementById('mobileThemeBtn');
+const mobilePortalBtn = document.getElementById('mobilePortalBtn');
+const rotateHintEl = document.getElementById('rotateHint');
+const rotateHintTextEl = document.getElementById('rotateHintText');
+
+const restartBtn = document.getElementById('restartBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+const THEME = {
+  zoomGreen: 'rgb(164, 214, 69)',
+  pipeGreen: 'rgb(146, 208, 80)',
+  midGray: 'rgb(132, 136, 145)',
+  darkGray: 'rgb(49, 53, 64)',
+  paperGray: 'rgb(23, 27, 35)',
+  softWhite: 'rgb(232, 236, 242)',
+  brandFont: '"Montserrat", "Arial Black", "Avenir Next Condensed", "PingFang SC", "Microsoft YaHei", sans-serif'
+};
+const MACHINE_SCROLL_FACTOR = 0.3;
+const MACHINE_SCALE_MULTIPLIER = 3;
+const SCROLL_BANNER_TEXT = 'VISION CREATES FUTURE';
+const HUD_SPEED_FACTOR = 0.22;
+const MACHINE_TYPES = [
+  'mobileCrane',
+  'towerCrane',
+  'excavator',
+  'aerialLift',
+  'pumpTruck',
+  'bulldozer',
+  'miningTruck',
+  'loader'
+];
+const MACHINE_BASE_WIDTH = {
+  mobileCrane: 124,
+  towerCrane: 132,
+  excavator: 108,
+  aerialLift: 92,
+  pumpTruck: 130,
+  bulldozer: 102,
+  miningTruck: 122,
+  loader: 106
+};
+const PORTAL_THEME = {
+  font: '"Arial", "Helvetica Neue", "Noto Sans SC", "Microsoft YaHei", sans-serif',
+  nav: ['Products', 'Service', 'Construction Cases', 'Investor', 'News', 'About Zoomlion', 'Contact'],
+  quickFindTitle: 'Quickly Find',
+  quickFindType: 'Earthmoving Machinery'
+};
+const OFFICE_MEDIA = {
+  logo: createThemeImage('./Products-ZOOMLION_files/08175f66973246398cb2f48e6ebbb39b.png'),
+  heroes: [
+    createThemeImage('./Products-ZOOMLION_files/31247e7d279041a59e7680867b974fe9.jpg'),
+    createThemeImage('./Products-ZOOMLION_files/298743584af34bad9facb2fb2a8718ba.jpg'),
+    createThemeImage('./Products-ZOOMLION_files/9bb5e280861a4877b2214ad249ed13b3.jpg')
+  ],
+  cards: [
+    { img: createThemeImage('./Products-ZOOMLION_files/5f97e517fac74b3aab4be8bc46920c10.png'), name: 'ZWL75G', type: 'MINI EXCAVATOR' },
+    { img: createThemeImage('./Products-ZOOMLION_files/5138b1b6b055420fa59f4e9cdda1fb42.png'), name: 'ZWL62G', type: 'MINI EXCAVATOR' },
+    { img: createThemeImage('./Products-ZOOMLION_files/d42eaaa3f95944f6bd151be6b2cd86ab.png'), name: 'ZWL75GE', type: 'MINI EXCAVATOR' }
+  ]
+};
+const I18N = {
+  zh: {
+    lang_name: '中文',
+    hud_score: '得分',
+    hud_speed: '速度',
+    hud_best: '最佳',
+    hud_state: '状态',
+    state_ready: '待开始',
+    state_running: '飞行中',
+    state_paused: '暂停',
+    state_dead: '失败',
+    btn_restart: '重新开始',
+    btn_pause: '暂停/继续 (P)',
+    btn_fullscreen: '全屏 (F)',
+    btn_exit_fullscreen: '退出全屏 (F)',
+    label_language: '语言',
+    controls_line1: '操作: 点击屏幕/空格上升，不操作会下坠。',
+    controls_line2: '规则: 撞柱子或落地即失败。通过柱子数量计分，越后面速度越快。',
+    rank_title: '飞行部队飞行绩效得分表',
+    tips_title: '提示',
+    tips_line1: '点击屏幕或空格上升',
+    tips_line2: 'P 键暂停 / 继续',
+    tips_line3: 'F 全屏 | T 主题 | D 门户 | Y 返回 | M 重开',
+    unit_points: '分',
+    no_record: '暂无记录',
+    msg_start: '点击屏幕或按空格开始飞行',
+    msg_takeoff: 'ZOOMBIRD 起飞',
+    msg_pause: '已暂停',
+    msg_resume: '继续飞行',
+    msg_fullscreen_on: '全屏模式',
+    msg_fullscreen_off: '退出全屏',
+    msg_fullscreen_unsupported: '当前环境不支持全屏',
+    msg_theme_dark: '主题：深色工业',
+    msg_theme_office: '主题：门户办公',
+    msg_passed: '通过 {count} 根柱子',
+    msg_fail: '失败：{reason}（点击屏幕或空格重开）',
+    reason_ground: '掉到地上',
+    reason_pipe: '撞到柱子',
+    overlay_start: '点击屏幕或按空格开始',
+    overlay_pause: '暂停中',
+    overlay_pause_hint: '按 P 继续',
+    overlay_dead: '你的小鸟坠机了',
+    overlay_score: '得分: {score}',
+    overlay_restart: '按 M 键重开',
+    overlay_hint: 'P 暂停 | F 全屏 | T 主题 | D 门户',
+    canvas_score: '得分',
+    portal_tip: '按 Y 返回游戏',
+    mobile_flap: '跳跃',
+    mobile_pause: '暂停',
+    mobile_restart: '重开',
+    mobile_theme: '主题',
+    mobile_portal: '门户',
+    rotate_hint: '建议横屏体验'
+  },
+  en: {
+    lang_name: 'English',
+    hud_score: 'Score',
+    hud_speed: 'Speed',
+    hud_best: 'Best',
+    hud_state: 'Status',
+    state_ready: 'Ready',
+    state_running: 'Flying',
+    state_paused: 'Paused',
+    state_dead: 'Crashed',
+    btn_restart: 'Restart',
+    btn_pause: 'Pause/Resume (P)',
+    btn_fullscreen: 'Fullscreen (F)',
+    btn_exit_fullscreen: 'Exit Fullscreen (F)',
+    label_language: 'Language',
+    controls_line1: 'Control: Tap/Space to rise, otherwise you fall.',
+    controls_line2: 'Rule: Hit a pipe or ground and you fail. Pass pipes to score.',
+    rank_title: 'Flight Performance Board',
+    tips_title: 'Tips',
+    tips_line1: 'Tap screen or press Space to rise',
+    tips_line2: 'Press P to pause/resume',
+    tips_line3: 'F Fullscreen | T Theme | D Portal | Y Return | M Restart',
+    unit_points: 'pts',
+    no_record: 'No records yet',
+    msg_start: 'Tap screen or press Space to start',
+    msg_takeoff: 'ZOOMBIRD takeoff',
+    msg_pause: 'Paused',
+    msg_resume: 'Flight resumed',
+    msg_fullscreen_on: 'Fullscreen mode',
+    msg_fullscreen_off: 'Exited fullscreen',
+    msg_fullscreen_unsupported: 'Fullscreen not supported here',
+    msg_theme_dark: 'Theme: Dark Industrial',
+    msg_theme_office: 'Theme: Portal Office',
+    msg_passed: 'Passed {count} pipes',
+    msg_fail: 'Failed: {reason} (tap/Space to restart)',
+    reason_ground: 'hit the ground',
+    reason_pipe: 'hit a pipe',
+    overlay_start: 'Tap screen or press Space to start',
+    overlay_pause: 'Paused',
+    overlay_pause_hint: 'Press P to continue',
+    overlay_dead: 'Your bird crashed',
+    overlay_score: 'Score: {score}',
+    overlay_restart: 'Press M to restart',
+    overlay_hint: 'P Pause | F Fullscreen | T Theme | D Portal',
+    canvas_score: 'Score',
+    portal_tip: 'Press Y to return to game',
+    mobile_flap: 'Flap',
+    mobile_pause: 'Pause',
+    mobile_restart: 'Restart',
+    mobile_theme: 'Theme',
+    mobile_portal: 'Portal',
+    rotate_hint: 'Rotate for better play'
+  },
+  es: {
+    lang_name: 'Español',
+    hud_score: 'Puntuación',
+    hud_speed: 'Velocidad',
+    hud_best: 'Mejor',
+    hud_state: 'Estado',
+    state_ready: 'Listo',
+    state_running: 'Volando',
+    state_paused: 'Pausado',
+    state_dead: 'Caído',
+    btn_restart: 'Reiniciar',
+    btn_pause: 'Pausa/Reanudar (P)',
+    btn_fullscreen: 'Pantalla completa (F)',
+    btn_exit_fullscreen: 'Salir de pantalla completa (F)',
+    label_language: 'Idioma',
+    controls_line1: 'Control: Toca/Espacio para subir; si no, caerás.',
+    controls_line2: 'Regla: Chocar con tubo o suelo = derrota. Pasa tubos para puntuar.',
+    rank_title: 'Tabla de Rendimiento de Vuelo',
+    tips_title: 'Consejos',
+    tips_line1: 'Toca la pantalla o pulsa Espacio para subir',
+    tips_line2: 'Pulsa P para pausar/reanudar',
+    tips_line3: 'F Pantalla completa | T Tema | D Portal | Y Volver | M Reiniciar',
+    unit_points: 'pts',
+    no_record: 'Sin registros',
+    msg_start: 'Toca la pantalla o pulsa Espacio para empezar',
+    msg_takeoff: 'ZOOMBIRD despega',
+    msg_pause: 'Pausado',
+    msg_resume: 'Vuelo reanudado',
+    msg_fullscreen_on: 'Modo de pantalla completa',
+    msg_fullscreen_off: 'Pantalla completa desactivada',
+    msg_fullscreen_unsupported: 'Pantalla completa no compatible',
+    msg_theme_dark: 'Tema: Industrial oscuro',
+    msg_theme_office: 'Tema: Oficina portal',
+    msg_passed: 'Pasaste {count} tubos',
+    msg_fail: 'Fallo: {reason} (toca/Espacio para reiniciar)',
+    reason_ground: 'caíste al suelo',
+    reason_pipe: 'chocaste con un tubo',
+    overlay_start: 'Toca la pantalla o pulsa Espacio para empezar',
+    overlay_pause: 'Pausado',
+    overlay_pause_hint: 'Pulsa P para continuar',
+    overlay_dead: 'Tu pájaro se estrelló',
+    overlay_score: 'Puntuación: {score}',
+    overlay_restart: 'Pulsa M para reiniciar',
+    overlay_hint: 'P Pausa | F Pantalla completa | T Tema | D Portal',
+    canvas_score: 'Puntos',
+    portal_tip: 'Pulsa Y para volver al juego',
+    mobile_flap: 'Subir',
+    mobile_pause: 'Pausa',
+    mobile_restart: 'Reiniciar',
+    mobile_theme: 'Tema',
+    mobile_portal: 'Portal',
+    rotate_hint: 'Mejor en horizontal'
+  },
+  ru: {
+    lang_name: 'Русский',
+    hud_score: 'Счёт',
+    hud_speed: 'Скорость',
+    hud_best: 'Рекорд',
+    hud_state: 'Статус',
+    state_ready: 'Готово',
+    state_running: 'Полёт',
+    state_paused: 'Пауза',
+    state_dead: 'Падение',
+    btn_restart: 'Начать заново',
+    btn_pause: 'Пауза/Продолжить (P)',
+    btn_fullscreen: 'Полный экран (F)',
+    btn_exit_fullscreen: 'Выйти из полного экрана (F)',
+    label_language: 'Язык',
+    controls_line1: 'Управление: касание/Space поднимает, без нажатия падение.',
+    controls_line2: 'Правило: столкновение с трубой или землёй — проигрыш.',
+    rank_title: 'Таблица лётной эффективности',
+    tips_title: 'Подсказки',
+    tips_line1: 'Коснитесь экрана или нажмите Space для подъёма',
+    tips_line2: 'Нажмите P для паузы/продолжения',
+    tips_line3: 'F Экран | T Тема | D Портал | Y Назад | M Рестарт',
+    unit_points: 'очк.',
+    no_record: 'Записей пока нет',
+    msg_start: 'Коснитесь экрана или нажмите Space для старта',
+    msg_takeoff: 'ZOOMBIRD взлетает',
+    msg_pause: 'Пауза',
+    msg_resume: 'Полёт продолжен',
+    msg_fullscreen_on: 'Полноэкранный режим',
+    msg_fullscreen_off: 'Выход из полного экрана',
+    msg_fullscreen_unsupported: 'Полный экран не поддерживается',
+    msg_theme_dark: 'Тема: тёмная индустриальная',
+    msg_theme_office: 'Тема: офисный портал',
+    msg_passed: 'Пройдено труб: {count}',
+    msg_fail: 'Поражение: {reason} (касание/Space для рестарта)',
+    reason_ground: 'удар о землю',
+    reason_pipe: 'удар о трубу',
+    overlay_start: 'Коснитесь экрана или нажмите Space для старта',
+    overlay_pause: 'Пауза',
+    overlay_pause_hint: 'Нажмите P, чтобы продолжить',
+    overlay_dead: 'Птичка разбилась',
+    overlay_score: 'Счёт: {score}',
+    overlay_restart: 'Нажмите M для рестарта',
+    overlay_hint: 'P Пауза | F Экран | T Тема | D Портал',
+    canvas_score: 'Счёт',
+    portal_tip: 'Нажмите Y, чтобы вернуться в игру',
+    mobile_flap: 'Взмах',
+    mobile_pause: 'Пауза',
+    mobile_restart: 'Рестарт',
+    mobile_theme: 'Тема',
+    mobile_portal: 'Портал',
+    rotate_hint: 'Лучше играть в альбомной ориентации'
+  }
+};
+
+const SCORE_KEY = 'zoombird_scores_v1';
+
+const PHYSICS = {
+  gravity: 1680,
+  flapImpulse: -430,
+  baseSpeed: 240,
+  maxSpeed: 523,
+  pipeWidth: 78,
+  pipeSpacingMax: 442,
+  pipeSpacingMin: 286,
+  groundHeight: 88
+};
+
+const state = {
+  viewW: 960,
+  viewH: 540,
+  status: 'ready',
+  score: 0,
+  best: 0,
+  speed: PHYSICS.baseSpeed,
+  elapsed: 0,
+  distance: 0,
+  lastSpawnDistance: 0,
+  textShift: 0,
+  bird: {
+    y: 260,
+    vy: 0,
+    radius: 18,
+    rot: 0
+  },
+  pipes: [],
+  scores: [],
+  machines: [],
+  machineTailX: -220,
+  machineTypeCursor: 0,
+  lang: 'zh',
+  messageKey: 'msg_start',
+  messageData: {},
+  themeMode: 'dark',
+  portalOpen: false,
+  statusBeforePortal: 'ready',
+  isMobile: false,
+  stars: [],
+  starFieldW: 0,
+  starFieldH: 0
+};
+
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+function rand(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+function createThemeImage(src) {
+  const img = new Image();
+  img.decoding = 'async';
+  img.src = src;
+  return img;
+}
+
+function birdX() {
+  return state.viewW * 0.28;
+}
+
+function groundY() {
+  return state.viewH - PHYSICS.groundHeight;
+}
+
+function brandFontPx(size, weight) {
+  return String(weight || 700) + ' ' + String(size) + 'px ' + THEME.brandFont;
+}
+
+function portalFontPx(size, weight) {
+  return String(weight || 700) + ' ' + String(size) + 'px ' + PORTAL_THEME.font;
+}
+
+function cameraX() {
+  return state.distance * MACHINE_SCROLL_FACTOR;
+}
+
+function detectMobileProfile() {
+  state.isMobile = window.matchMedia('(max-width: 900px), (pointer: coarse)').matches;
+}
+
+function updateRotateHint() {
+  const shouldShow = state.isMobile && !state.portalOpen && window.matchMedia('(orientation: portrait)').matches;
+  rotateHintEl.classList.toggle('active', shouldShow);
+  rotateHintEl.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+}
+
+function machineAheadRange() {
+  return state.isMobile ? 760 : 1200;
+}
+
+function machineCullRange() {
+  return state.isMobile ? 330 : 560;
+}
+
+function roundedRectPath(x, y, w, h, r) {
+  const radius = Math.max(0, Math.min(r, w * 0.5, h * 0.5));
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+function imageReady(img) {
+  return !!(img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0);
+}
+
+function drawImageCover(img, x, y, w, h) {
+  if (!imageReady(img)) return false;
+  const sw = img.naturalWidth;
+  const sh = img.naturalHeight;
+  const scale = Math.max(w / sw, h / sh);
+  const dw = sw * scale;
+  const dh = sh * scale;
+  const dx = x + (w - dw) * 0.5;
+  const dy = y + (h - dh) * 0.5;
+  ctx.drawImage(img, dx, dy, dw, dh);
+  return true;
+}
+
+function drawImageContain(img, x, y, w, h, padRatio) {
+  if (!imageReady(img)) return false;
+  const pad = Math.max(0, Math.min(0.25, padRatio || 0));
+  const innerW = w * (1 - pad * 2);
+  const innerH = h * (1 - pad * 2);
+  const sw = img.naturalWidth;
+  const sh = img.naturalHeight;
+  const scale = Math.min(innerW / sw, innerH / sh);
+  const dw = sw * scale;
+  const dh = sh * scale;
+  const dx = x + (w - dw) * 0.5;
+  const dy = y + (h - dh) * 0.5;
+  ctx.drawImage(img, dx, dy, dw, dh);
+  return true;
+}
+
+function rebuildStars() {
+  const count = state.isMobile ? 52 : 92;
+  state.stars = [];
+  state.starFieldW = state.viewW;
+  state.starFieldH = state.viewH;
+  for (let i = 0; i < count; i += 1) {
+    state.stars.push({
+      x: rand(0, state.viewW),
+      y: rand(0, state.viewH * 0.66),
+      size: rand(0.8, 2.4),
+      alpha: rand(0.22, 0.9),
+      speed: rand(0.7, 2.4),
+      phase: rand(0, Math.PI * 2)
+    });
+  }
+}
+
+function ensureStarField() {
+  const resized = Math.abs(state.starFieldW - state.viewW) > 1 || Math.abs(state.starFieldH - state.viewH) > 1;
+  if (!state.stars.length || resized) {
+    rebuildStars();
+  }
+}
+
+function drawStarField() {
+  ensureStarField();
+  const now = performance.now() * 0.001;
+
+  const nebula = ctx.createRadialGradient(state.viewW * 0.2, state.viewH * 0.2, 0, state.viewW * 0.2, state.viewH * 0.2, state.viewW * 0.55);
+  nebula.addColorStop(0, 'rgba(164, 214, 69, 0.08)');
+  nebula.addColorStop(1, 'rgba(164, 214, 69, 0)');
+  ctx.fillStyle = nebula;
+  ctx.fillRect(0, 0, state.viewW, state.viewH);
+
+  for (let i = 0; i < state.stars.length; i += 1) {
+    const star = state.stars[i];
+    const twinkle = 0.58 + 0.42 * Math.sin(now * star.speed + star.phase);
+    const alpha = clamp(star.alpha * twinkle, 0.08, 1);
+    const color = i % 13 === 0 ? '164, 214, 69' : '232, 236, 242';
+    ctx.fillStyle = 'rgba(' + color + ',' + alpha.toFixed(3) + ')';
+    ctx.fillRect(star.x, star.y, star.size, star.size);
+  }
+}
+
+function targetHudSpeedByScore(score) {
+  const startHudSpeed = PHYSICS.baseSpeed * HUD_SPEED_FACTOR;
+  if (score <= 50) {
+    return startHudSpeed + (70 - startHudSpeed) * (score / 50);
+  }
+  return 70 + Math.floor((score - 50) / 10);
+}
+
+function dictFor(lang) {
+  return I18N[lang] || I18N.zh;
+}
+
+function t(key, params) {
+  const template = dictFor(state.lang)[key] || I18N.zh[key] || key;
+  return template.replace(/\{(\w+)\}/g, function(_, name) {
+    return params && params[name] !== undefined ? String(params[name]) : '';
+  });
+}
+
+function setMessage(key, params) {
+  state.messageKey = key;
+  state.messageData = params || {};
+}
+
+function applyLanguage(lang) {
+  if (!I18N[lang]) lang = 'zh';
+  state.lang = lang;
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang;
+  langSelectEl.value = lang;
+
+  labelScoreEl.textContent = t('hud_score');
+  labelSpeedEl.textContent = t('hud_speed');
+  labelBestEl.textContent = t('hud_best');
+  labelStateEl.textContent = t('hud_state');
+  langLabelEl.textContent = t('label_language');
+  restartBtn.textContent = t('btn_restart');
+  pauseBtn.textContent = t('btn_pause');
+  fullscreenBtn.textContent = document.fullscreenElement ? t('btn_exit_fullscreen') : t('btn_fullscreen');
+  controlsLine1El.textContent = t('controls_line1');
+  controlsLine2El.textContent = t('controls_line2');
+  rankTitleEl.textContent = t('rank_title');
+  tipsTitleEl.textContent = t('tips_title');
+  tipsLine1El.textContent = t('tips_line1');
+  tipsLine2El.textContent = t('tips_line2');
+  tipsLine3El.textContent = t('tips_line3');
+  portalTipEl.textContent = t('portal_tip');
+  mobileFlapBtn.textContent = t('mobile_flap');
+  mobilePauseBtn.textContent = t('mobile_pause');
+  mobileRestartBtn.textContent = t('mobile_restart');
+  mobileThemeBtn.textContent = t('mobile_theme');
+  mobilePortalBtn.textContent = t('mobile_portal');
+  rotateHintTextEl.textContent = t('rotate_hint');
+
+  updateHUD();
+  renderRanking();
+  updateRotateHint();
+}
+
+function enterPortalMode() {
+  if (state.portalOpen) return;
+  state.portalOpen = true;
+  state.statusBeforePortal = state.status;
+  if (state.status === 'running') {
+    state.status = 'paused';
+    setMessage('msg_pause');
+  }
+  portalOverlay.classList.add('active');
+  portalOverlay.setAttribute('aria-hidden', 'false');
+  updateRotateHint();
+  if (portalOverlay.requestFullscreen && document.fullscreenElement !== portalOverlay) {
+    portalOverlay.requestFullscreen().catch(function() {});
+  }
+}
+
+function exitPortalMode() {
+  if (!state.portalOpen) return;
+  state.portalOpen = false;
+  portalOverlay.classList.remove('active');
+  portalOverlay.setAttribute('aria-hidden', 'true');
+  updateRotateHint();
+
+  if (document.fullscreenElement === portalOverlay) {
+    document.exitFullscreen().catch(function() {});
+  }
+
+  if (state.statusBeforePortal === 'running') {
+    state.status = 'paused';
+    setMessage('msg_pause');
+    return;
+  }
+
+  state.status = state.statusBeforePortal;
+  if (state.status === 'ready') setMessage('msg_start');
+}
+
+function toggleThemeMode() {
+  state.themeMode = state.themeMode === 'dark' ? 'office' : 'dark';
+  setMessage(state.themeMode === 'dark' ? 'msg_theme_dark' : 'msg_theme_office');
+}
+
+function pushMachine() {
+  const slot = state.machineTypeCursor;
+  const type = MACHINE_TYPES[slot % MACHINE_TYPES.length];
+  state.machineTypeCursor += 1;
+
+  const mobileScale = state.isMobile ? 2.0 : MACHINE_SCALE_MULTIPLIER;
+  const scale = rand(0.84, 1.16) * mobileScale;
+  const width = MACHINE_BASE_WIDTH[type] * scale;
+  const spacing = state.isMobile ? rand(330, 560) : rand(260, 420);
+  const x = state.machineTailX + spacing;
+
+  const tone = slot % 2 === 0 ? 'rgba(102, 108, 121, 0.56)' : 'rgba(70, 75, 87, 0.6)';
+  const accent = slot % 3 === 0 ? 'rgba(164, 214, 69, 0.52)' : 'rgba(126, 132, 144, 0.54)';
+
+  state.machines.push({
+    type: type,
+    x: x,
+    width: width,
+    scale: scale,
+    tone: tone,
+    accent: accent
+  });
+  state.machineTailX = x + width;
+}
+
+function resetMachineScene() {
+  state.machines = [];
+  state.machineTailX = state.isMobile ? -180 : -240;
+  while (state.machineTailX < state.viewW + machineAheadRange()) {
+    pushMachine();
+  }
+}
+
+function syncMachineScene() {
+  const cam = cameraX();
+  const cull = machineCullRange();
+  const ahead = machineAheadRange();
+  while (state.machines.length && state.machines[0].x + state.machines[0].width < cam - cull) {
+    state.machines.shift();
+  }
+  if (!state.machines.length) {
+    state.machineTailX = cam - (state.isMobile ? 220 : 320);
+  }
+  while (state.machineTailX < cam + state.viewW + ahead) {
+    pushMachine();
+  }
+}
+
+function drawWheel(x, y, r) {
+  ctx.fillStyle = 'rgba(18, 22, 29, 0.92)';
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(202, 208, 220, 0.55)';
+  ctx.beginPath();
+  ctx.arc(x, y, r * 0.42, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawMachineSilhouette(machine, x, baseY) {
+  const body = machine.tone;
+  const accent = machine.accent;
+
+  ctx.save();
+  ctx.translate(x, baseY);
+  ctx.scale(machine.scale, machine.scale);
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  if (machine.type === 'towerCrane') {
+    ctx.fillStyle = body;
+    ctx.fillRect(10, -98, 10, 78);
+    ctx.fillRect(0, -102, 98, 6);
+    ctx.fillRect(0, -20, 34, 8);
+    ctx.fillStyle = accent;
+    ctx.fillRect(52, -96, 3, 26);
+    ctx.fillRect(49, -70, 10, 4);
+    ctx.fillRect(74, -102, 20, 6);
+  } else if (machine.type === 'mobileCrane') {
+    ctx.fillStyle = body;
+    ctx.fillRect(0, -24, 64, 14);
+    ctx.fillRect(8, -36, 18, 12);
+    ctx.fillStyle = accent;
+    ctx.fillRect(26, -24, 16, 8);
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(44, -24);
+    ctx.lineTo(95, -58);
+    ctx.lineTo(104, -52);
+    ctx.stroke();
+    drawWheel(14, -8, 6);
+    drawWheel(48, -8, 6);
+  } else if (machine.type === 'excavator') {
+    ctx.fillStyle = body;
+    ctx.fillRect(0, -14, 52, 8);
+    ctx.fillRect(8, -30, 32, 16);
+    ctx.fillStyle = accent;
+    ctx.fillRect(18, -44, 14, 14);
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(38, -30);
+    ctx.lineTo(60, -45);
+    ctx.lineTo(72, -36);
+    ctx.stroke();
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.moveTo(71, -37);
+    ctx.lineTo(80, -34);
+    ctx.lineTo(75, -26);
+    ctx.closePath();
+    ctx.fill();
+  } else if (machine.type === 'aerialLift') {
+    ctx.fillStyle = body;
+    ctx.fillRect(0, -16, 44, 8);
+    drawWheel(10, -8, 5);
+    drawWheel(32, -8, 5);
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(14, -16);
+    ctx.lineTo(24, -30);
+    ctx.lineTo(34, -16);
+    ctx.moveTo(14, -30);
+    ctx.lineTo(24, -16);
+    ctx.lineTo(34, -30);
+    ctx.moveTo(34, -30);
+    ctx.lineTo(52, -44);
+    ctx.stroke();
+    ctx.fillStyle = accent;
+    ctx.fillRect(50, -48, 18, 6);
+  } else if (machine.type === 'pumpTruck') {
+    ctx.fillStyle = body;
+    ctx.fillRect(0, -22, 70, 12);
+    ctx.fillRect(8, -36, 16, 14);
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(46, -22);
+    ctx.lineTo(62, -44);
+    ctx.lineTo(88, -58);
+    ctx.lineTo(110, -48);
+    ctx.stroke();
+    ctx.fillStyle = accent;
+    ctx.fillRect(106, -52, 10, 4);
+    drawWheel(16, -8, 6);
+    drawWheel(50, -8, 6);
+  } else if (machine.type === 'bulldozer') {
+    ctx.fillStyle = body;
+    ctx.fillRect(4, -14, 54, 8);
+    ctx.fillRect(12, -30, 36, 16);
+    ctx.fillRect(20, -42, 14, 12);
+    ctx.fillStyle = accent;
+    ctx.fillRect(58, -28, 11, 18);
+    drawWheel(16, -8, 6);
+    drawWheel(38, -8, 6);
+  } else if (machine.type === 'miningTruck') {
+    ctx.fillStyle = body;
+    ctx.fillRect(0, -18, 76, 10);
+    ctx.beginPath();
+    ctx.moveTo(12, -44);
+    ctx.lineTo(62, -44);
+    ctx.lineTo(76, -28);
+    ctx.lineTo(28, -28);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = accent;
+    ctx.fillRect(24, -52, 42, 8);
+    drawWheel(20, -8, 7);
+    drawWheel(58, -8, 8);
+  } else if (machine.type === 'loader') {
+    ctx.fillStyle = body;
+    ctx.fillRect(8, -26, 34, 14);
+    ctx.fillRect(18, -40, 14, 14);
+    ctx.fillRect(4, -14, 48, 8);
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(38, -24);
+    ctx.lineTo(58, -30);
+    ctx.lineTo(70, -24);
+    ctx.stroke();
+    ctx.fillStyle = accent;
+    ctx.beginPath();
+    ctx.moveTo(69, -24);
+    ctx.lineTo(80, -22);
+    ctx.lineTo(76, -16);
+    ctx.closePath();
+    ctx.fill();
+    drawWheel(14, -8, 6);
+    drawWheel(38, -8, 7);
+  }
+
+  ctx.restore();
+}
+
+function drawIndustrialHorizon() {
+  const gy = groundY();
+  const isOffice = state.themeMode === 'office';
+  const baseY = gy + (isOffice ? 18 : 10);
+  const cam = cameraX();
+  const drawCull = state.isMobile ? 300 : 560;
+
+  ctx.fillStyle = isOffice ? 'rgba(132, 136, 145, 0.16)' : 'rgba(132, 136, 145, 0.12)';
+  ctx.fillRect(0, gy - (isOffice ? 108 : 128), state.viewW, isOffice ? 76 : 96);
+  ctx.fillStyle = isOffice ? 'rgba(92, 98, 108, 0.18)' : 'rgba(49, 53, 64, 0.2)';
+  ctx.fillRect(0, gy - 26, state.viewW, 14);
+  ctx.strokeStyle = isOffice ? 'rgba(88, 94, 105, 0.34)' : 'rgba(132, 136, 145, 0.4)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(0, gy - 26);
+  ctx.lineTo(state.viewW, gy - 26);
+  ctx.stroke();
+
+  ctx.save();
+  ctx.globalAlpha = isOffice ? (state.isMobile ? 0.44 : 0.52) : 1;
+  for (let i = 0; i < state.machines.length; i += 1) {
+    if (state.isMobile && i % 2 === 1) continue;
+    const machine = state.machines[i];
+    const drawX = machine.x - cam;
+    if (drawX > state.viewW + drawCull || drawX + machine.width < -drawCull) {
+      continue;
+    }
+    drawMachineSilhouette(machine, drawX, baseY);
+  }
+  ctx.restore();
+}
+
+function loadScores() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SCORE_KEY) || '[]');
+    state.scores = Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    state.scores = [];
+  }
+  state.best = state.scores.length ? state.scores[0].score : 0;
+  renderRanking();
+}
+
+function saveScore(score) {
+  state.scores.push({ score: score, ts: Date.now() });
+  state.scores.sort(function(a, b) { return b.score - a.score; });
+  state.scores = state.scores.slice(0, 10);
+  state.best = state.scores.length ? state.scores[0].score : 0;
+  try {
+    localStorage.setItem(SCORE_KEY, JSON.stringify(state.scores));
+  } catch (e) {}
+  renderRanking();
+}
+
+function renderRanking() {
+  if (!state.scores.length) {
+    rankListEl.innerHTML = '<li>' + t('no_record') + '</li>';
+    return;
+  }
+
+  rankListEl.innerHTML = state.scores.map(function(it) {
+    return '<li>' + it.score + ' ' + t('unit_points') + '</li>';
+  }).join('');
+}
+
+function resizeCanvas() {
+  detectMobileProfile();
+  const rect = canvas.getBoundingClientRect();
+  const rawDpr = window.devicePixelRatio || 1;
+  const dpr = state.isMobile ? Math.min(2, rawDpr) : rawDpr;
+  state.viewW = Math.max(320, Math.round(rect.width));
+  state.viewH = Math.max(180, Math.round(rect.height));
+
+  canvas.width = Math.round(state.viewW * dpr);
+  canvas.height = Math.round(state.viewH * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  if (state.status === 'ready') {
+    state.bird.y = state.viewH * 0.45;
+  }
+  syncMachineScene();
+  updateRotateHint();
+}
+
+function resetRun() {
+  state.status = 'ready';
+  state.score = 0;
+  state.speed = PHYSICS.baseSpeed;
+  state.elapsed = 0;
+  state.distance = 0;
+  state.lastSpawnDistance = 0;
+  state.textShift = 0;
+  state.bird.y = state.viewH * 0.45;
+  state.bird.vy = 0;
+  state.bird.rot = 0;
+  state.pipes = [];
+  state.machineTypeCursor = 0;
+  resetMachineScene();
+  setMessage('msg_start');
+}
+
+function startRun() {
+  state.status = 'running';
+  state.elapsed = 0;
+  state.distance = 0;
+  state.lastSpawnDistance = 0;
+  state.speed = PHYSICS.baseSpeed;
+  setMessage('msg_takeoff');
+}
+
+function spawnPipe() {
+  const rawGapH = clamp(186 - state.score * 2.2, 126, 186);
+  const gapH = rawGapH * 0.85;
+  const topSafe = 58 + gapH * 0.5;
+  const bottomSafe = PHYSICS.groundHeight + 62 + gapH * 0.5;
+  const gapY = rand(topSafe, state.viewH - bottomSafe);
+
+  state.pipes.push({
+    x: state.viewW + PHYSICS.pipeWidth + 18,
+    width: PHYSICS.pipeWidth,
+    gapY: gapY,
+    gapH: gapH,
+    scored: false
+  });
+}
+
+function failRun(reasonKey) {
+  if (state.status === 'dead') return;
+  state.status = 'dead';
+  setMessage('msg_fail', { reason: t(reasonKey) });
+  saveScore(state.score);
+}
+
+function flap() {
+  if (state.portalOpen) return;
+  if (state.status === 'paused') {
+    state.status = 'running';
+    setMessage('msg_resume');
+  }
+  if (state.status === 'dead') return;
+  if (state.status === 'ready') startRun();
+  if (state.status !== 'running') return;
+
+  state.bird.vy = PHYSICS.flapImpulse;
+}
+
+function togglePause() {
+  if (state.portalOpen) return;
+  if (state.status === 'dead' || state.status === 'ready') return;
+  state.status = state.status === 'paused' ? 'running' : 'paused';
+  setMessage(state.status === 'paused' ? 'msg_pause' : 'msg_resume');
+}
+
+async function toggleFullscreen() {
+  if (state.portalOpen) return;
+  try {
+    if (!document.fullscreenElement) {
+      await gameShell.requestFullscreen();
+      setMessage('msg_fullscreen_on');
+    } else {
+      await document.exitFullscreen();
+      setMessage('msg_fullscreen_off');
+    }
+  } catch (e) {
+    setMessage('msg_fullscreen_unsupported');
+  }
+}
+
+function update(dt) {
+  if (state.status !== 'running') return;
+
+  state.elapsed += dt;
+  const targetHudSpeed = targetHudSpeedByScore(state.score);
+  const speedTarget = Math.min(PHYSICS.maxSpeed, targetHudSpeed / HUD_SPEED_FACTOR);
+  state.speed += (speedTarget - state.speed) * Math.min(1, dt * 1.6);
+
+  state.distance += state.speed * dt;
+  state.textShift += state.speed * dt * 0.18;
+
+  const spacing = clamp(PHYSICS.pipeSpacingMax - state.score * 1.4, PHYSICS.pipeSpacingMin, PHYSICS.pipeSpacingMax);
+  const nextSpawnDistance = state.pipes.length === 0 ? spacing * 0.5 : spacing;
+  if (state.distance - state.lastSpawnDistance >= nextSpawnDistance) {
+    spawnPipe();
+    state.lastSpawnDistance = state.distance;
+  }
+
+  state.bird.vy += PHYSICS.gravity * dt;
+  state.bird.y += state.bird.vy * dt;
+  state.bird.rot = clamp(state.bird.vy / 560, -0.55, 1.0);
+
+  if (state.bird.y - state.bird.radius < 0) {
+    state.bird.y = state.bird.radius;
+    state.bird.vy = 0;
+  }
+
+  if (state.bird.y + state.bird.radius >= groundY()) {
+    state.bird.y = groundY() - state.bird.radius;
+    failRun('reason_ground');
+  }
+
+  const bx = birdX();
+  for (let i = state.pipes.length - 1; i >= 0; i -= 1) {
+    const p = state.pipes[i];
+    p.x -= state.speed * dt;
+
+    const gapTop = p.gapY - p.gapH * 0.5;
+    const gapBottom = p.gapY + p.gapH * 0.5;
+
+    if (bx + state.bird.radius > p.x && bx - state.bird.radius < p.x + p.width) {
+      if (state.bird.y - state.bird.radius < gapTop || state.bird.y + state.bird.radius > gapBottom) {
+        failRun('reason_pipe');
+      }
+    }
+
+    if (!p.scored && p.x + p.width < bx) {
+      p.scored = true;
+      state.score += 1;
+      state.best = Math.max(state.best, state.score);
+      setMessage('msg_passed', { count: state.score });
+    }
+
+    if (p.x + p.width < -24) {
+      state.pipes.splice(i, 1);
+    }
+  }
+}
+
+function drawOfficePortalBackground() {
+  const w = state.viewW;
+  const h = state.viewH;
+
+  ctx.fillStyle = 'rgb(217, 217, 217)';
+  ctx.fillRect(0, 0, w, h);
+
+  const headerH = clamp(h * 0.16, 68, 92);
+  ctx.fillStyle = 'rgb(255, 255, 255)';
+  ctx.fillRect(0, 0, w, headerH);
+  ctx.strokeStyle = 'rgba(52, 57, 65, 0.18)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, headerH + 0.5);
+  ctx.lineTo(w, headerH + 0.5);
+  ctx.stroke();
+
+  const logoX = 14;
+  const logoY = 8;
+  const logoW = clamp(w * 0.16, 126, 186);
+  const logoH = headerH - 16;
+  if (!drawImageContain(OFFICE_MEDIA.logo, logoX, logoY, logoW, logoH, 0.04)) {
+    ctx.fillStyle = 'rgb(164, 214, 69)';
+    ctx.fillRect(logoX, logoY, logoW, logoH);
+    ctx.fillStyle = 'rgba(23, 27, 35, 0.96)';
+    ctx.font = portalFontPx(Math.max(15, headerH * 0.28), 900);
+    ctx.textAlign = 'left';
+    ctx.fillText('ZOOMLION', logoX + 10, logoY + logoH * 0.62);
+  }
+
+  const menuW = clamp(headerH * 0.72, 38, 54);
+  const menuH = menuW;
+  const menuX = w - menuW - 12;
+  const menuY = (headerH - menuH) * 0.5;
+
+  const rightEdge = menuX - 12;
+  ctx.fillStyle = 'rgba(39, 44, 52, 0.92)';
+  ctx.font = portalFontPx(clamp(headerH * 0.19, 11, 17), 700);
+  ctx.textAlign = 'left';
+  const navY = headerH * 0.60;
+  let navX = logoX + logoW + 16;
+  const navGap = clamp(w * 0.016, 12, 22);
+  for (let i = 0; i < PORTAL_THEME.nav.length; i += 1) {
+    const item = PORTAL_THEME.nav[i];
+    const itemW = ctx.measureText(item).width;
+    if (navX + itemW > rightEdge - 74) break;
+    ctx.fillText(item, navX, navY);
+    navX += itemW + navGap;
+  }
+
+  const searchBox = 24;
+  const searchX = rightEdge - 90;
+  const searchY = (headerH - searchBox) * 0.5;
+  ctx.strokeStyle = 'rgba(39, 44, 52, 0.92)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(searchX, searchY, searchBox, searchBox);
+  ctx.beginPath();
+  ctx.moveTo(searchX + 16, searchY + 16);
+  ctx.lineTo(searchX + 24, searchY + 24);
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(39, 44, 52, 0.92)';
+  ctx.font = portalFontPx(clamp(headerH * 0.19, 11, 16), 700);
+  ctx.fillText('EN', searchX + searchBox + 12, navY);
+
+  ctx.strokeStyle = 'rgba(158, 158, 158, 0.75)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(searchX + searchBox + 37, searchY - 2);
+  ctx.lineTo(searchX + searchBox + 37, searchY + searchBox + 2);
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgb(164, 214, 69)';
+  ctx.fillRect(menuX, menuY, menuW, menuH);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.96)';
+  ctx.lineWidth = 2.6;
+  for (let i = 0; i < 3; i += 1) {
+    const ly = menuY + menuH * (0.3 + i * 0.2);
+    ctx.beginPath();
+    ctx.moveTo(menuX + menuW * 0.24, ly);
+    ctx.lineTo(menuX + menuW * 0.76, ly);
+    ctx.stroke();
+  }
+
+  const heroY = headerH;
+  const heroH = clamp(h * 0.47, 150, 264);
+  const heroIndex = Math.floor(performance.now() / 4200) % OFFICE_MEDIA.heroes.length;
+  const heroImg = OFFICE_MEDIA.heroes[heroIndex];
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, heroY, w, heroH);
+  ctx.clip();
+  if (!drawImageCover(heroImg, 0, heroY, w, heroH)) {
+    const heroFallback = ctx.createLinearGradient(0, heroY, 0, heroY + heroH);
+    heroFallback.addColorStop(0, 'rgb(181, 184, 190)');
+    heroFallback.addColorStop(1, 'rgb(140, 145, 152)');
+    ctx.fillStyle = heroFallback;
+    ctx.fillRect(0, heroY, w, heroH);
+  }
+  ctx.restore();
+
+  ctx.fillStyle = 'rgba(12, 14, 18, 0.12)';
+  ctx.fillRect(0, heroY, w, heroH);
+
+  const indicatorY = heroY + heroH - 20;
+  ctx.font = portalFontPx(clamp(h * 0.045, 15, 32), 700);
+  ctx.textAlign = 'left';
+  const indStart = w * 0.5 - 90;
+  ctx.fillStyle = 'rgb(164, 214, 69)';
+  ctx.fillText('01', indStart, indicatorY);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+  ctx.fillText('02', indStart + 74, indicatorY);
+  ctx.fillText('03', indStart + 124, indicatorY);
+  ctx.fillStyle = 'rgba(173, 218, 72, 0.24)';
+  ctx.fillRect(indStart + 30, indicatorY - 12, 34, 10);
+  ctx.fillStyle = 'rgb(164, 214, 69)';
+  ctx.fillRect(indStart + 30, indicatorY - 12, 12, 10);
+
+  const bodyY = heroY + heroH;
+  const bodyH = h - bodyY;
+  ctx.fillStyle = 'rgb(217, 217, 217)';
+  ctx.fillRect(0, bodyY, w, bodyH);
+
+  const pad = clamp(w * 0.018, 10, 18);
+  const gap = clamp(w * 0.012, 8, 14);
+  const panelW = state.isMobile ? clamp(w * 0.3, 108, 136) : clamp(w * 0.23, 160, 258);
+  const cardCount = state.isMobile ? 2 : OFFICE_MEDIA.cards.length;
+  const cardW = (w - pad * 2 - panelW - gap * (cardCount + 1)) / cardCount;
+  const blockH = Math.max(96, bodyH - pad * 1.4);
+
+  ctx.fillStyle = 'rgb(232, 232, 232)';
+  ctx.strokeStyle = 'rgba(189, 189, 189, 0.92)';
+  ctx.lineWidth = 1;
+  ctx.fillRect(pad, bodyY + pad * 0.7, panelW, blockH);
+  ctx.strokeRect(pad, bodyY + pad * 0.7, panelW, blockH);
+
+  ctx.fillStyle = 'rgb(145, 182, 64)';
+  ctx.font = portalFontPx(clamp(h * 0.04, 13, 22), 800);
+  ctx.textAlign = 'left';
+  ctx.fillText(PORTAL_THEME.quickFindTitle.toUpperCase(), pad + 12, bodyY + pad + 18);
+  ctx.fillStyle = 'rgba(63, 66, 72, 0.92)';
+  ctx.font = portalFontPx(clamp(h * 0.032, 11, 17), 700);
+  ctx.fillText(PORTAL_THEME.quickFindType.toUpperCase(), pad + 12, bodyY + pad + 44);
+  ctx.strokeStyle = 'rgba(189, 189, 189, 0.92)';
+  ctx.beginPath();
+  ctx.moveTo(pad + 12, bodyY + pad + 54);
+  ctx.lineTo(pad + panelW - 12, bodyY + pad + 54);
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(102, 106, 114, 0.98)';
+  ctx.font = portalFontPx(clamp(h * 0.026, 9, 13), 600);
+  ctx.fillText('Mini Excavator', pad + 12, bodyY + pad + 74);
+  ctx.fillText('Hydraulic Excavator', pad + 12, bodyY + pad + 90);
+
+  for (let i = 0; i < cardCount; i += 1) {
+    const card = OFFICE_MEDIA.cards[i];
+    const x = pad + panelW + gap + i * (cardW + gap);
+    const y = bodyY + pad * 0.7;
+    ctx.fillStyle = 'rgb(232, 232, 232)';
+    ctx.fillRect(x, y, cardW, blockH);
+    ctx.strokeStyle = 'rgba(189, 189, 189, 0.92)';
+    ctx.strokeRect(x, y, cardW, blockH);
+
+    const imageAreaH = blockH * 0.67;
+    if (!drawImageContain(card.img, x, y + 4, cardW, imageAreaH, 0.06)) {
+      ctx.fillStyle = 'rgba(145, 182, 64, 0.16)';
+      ctx.fillRect(x + 12, y + 12, cardW - 24, imageAreaH - 18);
+    }
+
+    ctx.fillStyle = 'rgb(63, 66, 72)';
+    ctx.font = portalFontPx(clamp(h * 0.039, 13, 22), 500);
+    ctx.textAlign = 'center';
+    ctx.fillText(card.name, x + cardW * 0.5, y + imageAreaH + 28);
+    ctx.fillStyle = 'rgb(145, 182, 64)';
+    ctx.font = portalFontPx(clamp(h * 0.028, 10, 15), 700);
+    ctx.fillText(card.type, x + cardW * 0.5, y + imageAreaH + 50);
+  }
+
+  const contrast = ctx.createLinearGradient(0, 0, 0, h);
+  contrast.addColorStop(0, 'rgba(0, 0, 0, 0.05)');
+  contrast.addColorStop(0.56, 'rgba(0, 0, 0, 0.12)');
+  contrast.addColorStop(1, 'rgba(0, 0, 0, 0.2)');
+  ctx.fillStyle = contrast;
+  ctx.fillRect(0, 0, w, h);
+}
+
+function drawBackground() {
+  if (state.themeMode === 'office') {
+    drawOfficePortalBackground();
+    return;
+  }
+
+  syncMachineScene();
+
+  const sky = ctx.createLinearGradient(0, 0, 0, state.viewH);
+  sky.addColorStop(0, 'rgb(18, 22, 30)');
+  sky.addColorStop(0.44, 'rgb(27, 32, 42)');
+  sky.addColorStop(1, 'rgb(35, 41, 52)');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, state.viewW, state.viewH);
+  drawStarField();
+
+  const scrollText = SCROLL_BANNER_TEXT;
+  ctx.fillStyle = 'rgba(164, 214, 69, 0.24)';
+  const bannerFont = state.isMobile ? 16 : 24;
+  ctx.font = brandFontPx(bannerFont, 800);
+  ctx.textAlign = 'left';
+  const step = ctx.measureText(scrollText).width + (state.isMobile ? 300 : 460);
+  const offset = state.textShift % step;
+  for (let i = -1; i < Math.ceil(state.viewW / step) + 2; i += 1) {
+    const x = i * step - offset;
+    ctx.fillText(scrollText, x, state.isMobile ? 54 : 74);
+  }
+
+  ctx.fillStyle = 'rgba(164, 214, 69, 0.12)';
+  ctx.font = brandFontPx(state.isMobile ? 42 : 72, 900);
+  ctx.textAlign = 'center';
+  ctx.fillText('ZOOMBIRD', state.viewW * 0.5, state.viewH * 0.52);
+
+  drawIndustrialHorizon();
+
+  const contrast = ctx.createLinearGradient(0, 0, 0, state.viewH);
+  contrast.addColorStop(0, 'rgba(8, 10, 16, 0.08)');
+  contrast.addColorStop(0.6, 'rgba(8, 10, 16, 0.18)');
+  contrast.addColorStop(1, 'rgba(6, 8, 12, 0.34)');
+  ctx.fillStyle = contrast;
+  ctx.fillRect(0, 0, state.viewW, state.viewH);
+}
+
+function drawGround() {
+  const gy = groundY();
+  ctx.fillStyle = state.themeMode === 'office' ? 'rgb(186, 188, 191)' : 'rgb(40, 46, 58)';
+  ctx.fillRect(0, gy, state.viewW, PHYSICS.groundHeight);
+
+  ctx.strokeStyle = state.themeMode === 'office' ? 'rgba(90, 96, 110, 0.78)' : THEME.pipeGreen;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, gy + 1);
+  ctx.lineTo(state.viewW, gy + 1);
+  ctx.stroke();
+}
+
+function drawPipe(pipe) {
+  const topH = pipe.gapY - pipe.gapH * 0.5;
+  const bottomY = pipe.gapY + pipe.gapH * 0.5;
+  const bottomH = groundY() - bottomY;
+
+  ctx.fillStyle = THEME.pipeGreen;
+  ctx.fillRect(pipe.x, 0, pipe.width, topH);
+  ctx.fillRect(pipe.x, bottomY, pipe.width, bottomH);
+
+  ctx.fillStyle = THEME.midGray;
+  ctx.fillRect(pipe.x - 4, topH - 12, pipe.width + 8, 12);
+  ctx.fillRect(pipe.x - 4, bottomY, pipe.width + 8, 12);
+}
+
+function drawBird() {
+  const x = birdX();
+  const y = state.bird.y;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(state.bird.rot);
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.42)';
+  ctx.shadowBlur = state.isMobile ? 6 : 10;
+  ctx.shadowOffsetY = 2;
+
+  // 飞行挖掘机：主体（沙砾灰）
+  ctx.fillStyle = THEME.midGray;
+  ctx.fillRect(-18, -10, 28, 18);
+
+  // 机舱（星耀灰）
+  ctx.fillStyle = THEME.darkGray;
+  ctx.fillRect(-8, -20, 16, 12);
+
+  // 动力翼（极光绿）
+  ctx.fillStyle = THEME.zoomGreen;
+  ctx.beginPath();
+  ctx.ellipse(-10, 4, 11, 6, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 履带（星耀灰）
+  ctx.fillStyle = THEME.darkGray;
+  ctx.fillRect(-20, 8, 30, 7);
+
+  // 大臂与铲斗（极光绿 + 沙砾灰）
+  ctx.strokeStyle = THEME.zoomGreen;
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(10, -4);
+  ctx.lineTo(22, -15);
+  ctx.lineTo(30, -10);
+  ctx.stroke();
+
+  ctx.fillStyle = THEME.midGray;
+  ctx.beginPath();
+  ctx.moveTo(30, -10);
+  ctx.lineTo(39, -8);
+  ctx.lineTo(33, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // 驾驶窗
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.78)';
+  ctx.fillRect(-4, -17, 8, 6);
+
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.88)';
+  ctx.lineWidth = 1.2;
+  ctx.strokeRect(-18, -10, 28, 18);
+  ctx.strokeRect(-8, -20, 16, 12);
+
+  ctx.restore();
+}
+
+function drawInGameScore() {
+  const boxW = state.isMobile ? 176 : 214;
+  const boxH = state.isMobile ? 56 : 68;
+  const x = state.isMobile ? 10 : 14;
+  const y = state.isMobile ? 8 : 12;
+  const isOffice = state.themeMode === 'office';
+  ctx.fillStyle = isOffice ? 'rgba(248, 248, 248, 0.92)' : 'rgba(8, 12, 18, 0.7)';
+  ctx.fillRect(x, y, boxW, boxH);
+  ctx.strokeStyle = isOffice ? 'rgba(33, 36, 42, 0.28)' : 'rgba(132, 136, 145, 0.6)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, boxW, boxH);
+  ctx.fillStyle = isOffice ? 'rgba(33, 36, 42, 0.82)' : THEME.zoomGreen;
+  ctx.textAlign = 'left';
+  ctx.font = brandFontPx(state.isMobile ? 12 : 14, 800);
+  ctx.fillText(t('canvas_score') + ': ' + String(state.score), x + 8, y + (state.isMobile ? 20 : 24));
+  ctx.fillStyle = isOffice ? 'rgba(21, 25, 32, 0.96)' : THEME.softWhite;
+  ctx.font = brandFontPx(state.isMobile ? 11 : 13, 700);
+  ctx.fillText(t('hud_best') + ': ' + String(state.best), x + 8, y + (state.isMobile ? 40 : 50));
+  ctx.fillStyle = isOffice ? 'rgba(33, 36, 42, 0.36)' : 'rgba(164, 214, 69, 0.24)';
+  ctx.fillRect(x + 8, y + boxH - 7, boxW - 16, 2);
+}
+
+function drawOverlay() {
+  if (state.status === 'ready') {
+    ctx.fillStyle = 'rgba(12, 16, 22, 0.58)';
+    ctx.fillRect(0, 0, state.viewW, state.viewH);
+
+    const panelW = state.isMobile ? Math.min(420, state.viewW * 0.86) : Math.min(540, state.viewW * 0.72);
+    const panelH = state.isMobile ? Math.max(114, state.viewH * 0.22) : Math.max(126, state.viewH * 0.24);
+    const panelX = (state.viewW - panelW) * 0.5;
+    const panelY = state.isMobile ? state.viewH * 0.31 : state.viewH * 0.34;
+
+    roundedRectPath(panelX, panelY, panelW, panelH, 0);
+    ctx.fillStyle = 'rgba(28, 33, 44, 0.62)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(202, 208, 220, 0.62)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = THEME.zoomGreen;
+    ctx.textAlign = 'center';
+    ctx.font = brandFontPx(state.isMobile ? 34 : 44, 900);
+    ctx.fillText('ZOOMBIRD', state.viewW * 0.5, panelY + (state.isMobile ? 38 : 46));
+    ctx.fillStyle = THEME.softWhite;
+    ctx.font = brandFontPx(state.isMobile ? 17 : 22, 700);
+    ctx.fillText(t('overlay_start'), state.viewW * 0.5, panelY + (state.isMobile ? 72 : 86));
+    ctx.fillStyle = 'rgb(212, 214, 220)';
+    ctx.fillText(t('overlay_hint'), state.viewW * 0.5, panelY + (state.isMobile ? 96 : 114));
+  }
+
+  if (state.status === 'paused') {
+    ctx.fillStyle = 'rgba(49, 53, 64, 0.58)';
+    ctx.fillRect(0, 0, state.viewW, state.viewH);
+    ctx.fillStyle = THEME.softWhite;
+    ctx.textAlign = 'center';
+    ctx.font = brandFontPx(state.isMobile ? 34 : 42, 900);
+    ctx.fillText(t('overlay_pause'), state.viewW * 0.5, state.viewH * 0.48);
+    ctx.fillStyle = 'rgb(212, 214, 220)';
+    ctx.font = brandFontPx(state.isMobile ? 16 : 20, 700);
+    ctx.fillText(t('overlay_pause_hint'), state.viewW * 0.5, state.viewH * 0.55);
+  }
+
+  if (state.status === 'dead') {
+    ctx.fillStyle = 'rgba(49, 53, 64, 0.6)';
+    ctx.fillRect(0, 0, state.viewW, state.viewH);
+    ctx.fillStyle = THEME.softWhite;
+    ctx.textAlign = 'center';
+    ctx.font = brandFontPx(state.isMobile ? 34 : 42, 900);
+    ctx.fillText(t('overlay_dead'), state.viewW * 0.5, state.viewH * 0.43);
+    ctx.fillStyle = 'rgb(212, 214, 220)';
+    ctx.font = brandFontPx(state.isMobile ? 18 : 22, 700);
+    ctx.fillText(t('overlay_score', { score: state.score }), state.viewW * 0.5, state.viewH * 0.50);
+    ctx.font = brandFontPx(state.isMobile ? 15 : 18, 700);
+    ctx.fillText(t('overlay_restart'), state.viewW * 0.5, state.viewH * 0.57);
+  }
+}
+
+function draw() {
+  drawBackground();
+  for (let i = 0; i < state.pipes.length; i += 1) {
+    drawPipe(state.pipes[i]);
+  }
+  drawGround();
+  drawBird();
+  drawInGameScore();
+  drawOverlay();
+}
+
+function updateHUD() {
+  hudScore.textContent = String(state.score);
+  hudBest.textContent = String(state.best);
+  hudSpeed.textContent = Math.round(state.speed * HUD_SPEED_FACTOR) + ' km/h';
+
+  if (state.status === 'running') hudState.textContent = t('state_running');
+  else if (state.status === 'paused') hudState.textContent = t('state_paused');
+  else if (state.status === 'dead') hudState.textContent = t('state_dead');
+  else hudState.textContent = t('state_ready');
+
+  msgEl.textContent = t(state.messageKey, state.messageData);
+}
+
+let lastTs = performance.now();
+function loop(ts) {
+  const dt = Math.min(0.032, (ts - lastTs) / 1000);
+  lastTs = ts;
+  update(dt);
+  updateHUD();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+canvas.addEventListener('pointerdown', function(e) {
+  e.preventDefault();
+  if (state.portalOpen) return;
+  flap();
+}, { passive: false });
+
+window.addEventListener('keydown', function(e) {
+  if (state.portalOpen) {
+    if (e.code === 'KeyY') {
+      e.preventDefault();
+      exitPortalMode();
+    }
+    return;
+  }
+  if (e.code === 'Space') {
+    e.preventDefault();
+    flap();
+  }
+  if (e.code === 'KeyP') {
+    e.preventDefault();
+    togglePause();
+  }
+  if (e.code === 'KeyF') {
+    e.preventDefault();
+    toggleFullscreen();
+  }
+  if (e.code === 'KeyT') {
+    e.preventDefault();
+    toggleThemeMode();
+  }
+  if (e.code === 'KeyD') {
+    e.preventDefault();
+    enterPortalMode();
+  }
+  if (e.code === 'KeyM') {
+    e.preventDefault();
+    resetRun();
+    startRun();
+  }
+  if (e.code === 'KeyY') {
+    e.preventDefault();
+    exitPortalMode();
+  }
+});
+
+restartBtn.addEventListener('click', function() {
+  resetRun();
+});
+
+pauseBtn.addEventListener('click', function() {
+  togglePause();
+});
+
+fullscreenBtn.addEventListener('click', function() {
+  toggleFullscreen();
+});
+
+[mobileFlapBtn, mobilePauseBtn, mobileRestartBtn, mobileThemeBtn, mobilePortalBtn].forEach(function(btn) {
+  btn.addEventListener('pointerdown', function(e) {
+    e.preventDefault();
+  }, { passive: false });
+});
+
+mobileFlapBtn.addEventListener('click', function() {
+  flap();
+});
+
+mobilePauseBtn.addEventListener('click', function() {
+  togglePause();
+});
+
+mobileRestartBtn.addEventListener('click', function() {
+  resetRun();
+});
+
+mobileThemeBtn.addEventListener('click', function() {
+  toggleThemeMode();
+});
+
+mobilePortalBtn.addEventListener('click', function() {
+  enterPortalMode();
+});
+
+document.addEventListener('fullscreenchange', function() {
+  fullscreenBtn.textContent = document.fullscreenElement ? t('btn_exit_fullscreen') : t('btn_fullscreen');
+  setTimeout(resizeCanvas, 20);
+});
+
+langSelectEl.addEventListener('change', function() {
+  applyLanguage(langSelectEl.value);
+});
+
+window.addEventListener('resize', function() {
+  resizeCanvas();
+});
+
+window.addEventListener('orientationchange', function() {
+  setTimeout(resizeCanvas, 80);
+});
+
+loadScores();
+resizeCanvas();
+resetRun();
+applyLanguage(state.lang);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
