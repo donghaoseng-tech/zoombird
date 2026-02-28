@@ -3,12 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <title>ZoomBird</title>
 <script>
 var ua = navigator.userAgent;
 var isPhone = /iPhone|iPod/i.test(ua) || (/Android/i.test(ua) && /Mobile/i.test(ua));
-window.location.replace(isPhone ? 'mobile.html' : 'desktop.html');
+var target = isPhone ? 'mobile.html' : 'desktop.html';
+window.location.replace(target);
 </script>
+<noscript><meta http-equiv="refresh" content="0;url=desktop.html"></noscript>
 </head>
-<body></body>
+<body style="background:#0a0e14;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh">
+<a id="fb" style="font-size:1.2em;color:#a4d645;text-decoration:underline">Loading...</a>
+<script>document.getElementById('fb').href=target;document.getElementById('fb').textContent='Click here if not redirected';</script>
+</body>
 </html>
