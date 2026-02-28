@@ -902,7 +902,7 @@ const PHYSICS = {
   gravity: 1680,
   flapImpulse: -430,
   baseSpeed: 240,
-  maxSpeed: 523,
+  maxSpeed: 460,
   pipeWidth: 78,
   pipeSpacingMax: 442,
   pipeSpacingMin: 286,
@@ -1414,7 +1414,7 @@ function startRun() {
 }
 
 function spawnPipe() {
-  const rawGapH = clamp(186 - state.score * 2.2, 126, 186);
+  const rawGapH = clamp(186 - state.score * 1.6, 145, 186);
   const gapH = rawGapH * 0.85;
   const topSafe = 58 + gapH * 0.5;
   const bottomSafe = PHYSICS.groundHeight + 62 + gapH * 0.5;
