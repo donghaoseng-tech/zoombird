@@ -3,52 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZoomBird - 中联飞鸟</title>
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: linear-gradient(135deg, #0a1628 0%, #1a3a5c 50%, #0d7a3e 100%);
-  color: #fff;
-}
-.container {
-  text-align: center; padding: 40px 20px; max-width: 480px;
-}
-h1 { font-size: 2.4em; margin-bottom: 8px; text-shadow: 0 2px 12px rgba(0,0,0,.4); }
-.subtitle { font-size: 1.1em; opacity: .75; margin-bottom: 40px; }
-.btn {
-  display: block; width: 100%; max-width: 320px; margin: 16px auto;
-  padding: 18px 24px; border-radius: 14px; font-size: 1.15em;
-  text-decoration: none; color: #fff; font-weight: 600;
-  transition: transform .15s, box-shadow .15s;
-}
-.btn:active { transform: scale(.97); }
-.btn-mobile {
-  background: linear-gradient(135deg, #ff6b35, #f7931e);
-  box-shadow: 0 4px 20px rgba(255,107,53,.4);
-}
-.btn-desktop {
-  background: linear-gradient(135deg, #00b4d8, #0077b6);
-  box-shadow: 0 4px 20px rgba(0,180,216,.4);
-}
-.auto-hint { margin-top: 32px; font-size: .85em; opacity: .5; }
-</style>
-</head>
-<body>
-<div class="container">
-  <h1>ZoomBird</h1>
-  <p class="subtitle">中联飞鸟 — 点击开始游戏</p>
-  <a class="btn btn-mobile" href="mobile.html">📱 手机版</a>
-  <a class="btn btn-desktop" href="desktop.html">🖥️ 桌面版</a>
-  <p class="auto-hint" id="hint"></p>
-</div>
+<title>ZoomBird</title>
 <script>
 var m = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-document.getElementById('hint').textContent = m
-  ? '检测到移动设备，推荐手机版'
-  : '检测到桌面设备，推荐桌面版';
+window.location.replace(m ? 'mobile.html' : 'desktop.html');
 </script>
-</body>
+</head>
+<body></body>
 </html>
