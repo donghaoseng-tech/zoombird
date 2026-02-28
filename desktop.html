@@ -1903,8 +1903,18 @@ function drawOverlay() {
     ctx.fillText(t('overlay_pause_hint'), state.viewW * 0.5, state.viewH * 0.55);
   }
 
-  if (state.status === 'dead') {
-    // no overlay, just press M to restart
+  if (state.status === 'dead' && state.themeMode === 'dark') {
+    ctx.fillStyle = 'rgba(49, 53, 64, 0.6)';
+    ctx.fillRect(0, 0, state.viewW, state.viewH);
+    ctx.fillStyle = THEME.softWhite;
+    ctx.textAlign = 'center';
+    ctx.font = brandFontPx(42, 900);
+    ctx.fillText(t('overlay_dead'), state.viewW * 0.5, state.viewH * 0.43);
+    ctx.fillStyle = 'rgb(212, 214, 220)';
+    ctx.font = brandFontPx(22, 700);
+    ctx.fillText(t('overlay_score', { score: state.score }), state.viewW * 0.5, state.viewH * 0.50);
+    ctx.font = brandFontPx(18, 700);
+    ctx.fillText(t('overlay_restart'), state.viewW * 0.5, state.viewH * 0.57);
   }
 }
 
