@@ -8,7 +8,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Noto+Sans+SC:wght@500;700;900&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0e14; }
-canvas { display: block; width: 100vw; height: 100dvh; touch-action: none; }
+canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-action: none; }
 #pauseBtn {
   position: fixed; top: 12px; right: 12px; z-index: 100;
   width: 44px; height: 44px; border: 0; border-radius: 50%;
@@ -348,7 +348,7 @@ function drawBird() {
   ctx.shadowColor='rgba(0,0,0,0.42)'; ctx.shadowBlur=6; ctx.shadowOffsetY=2;
   ctx.fillStyle=THEME.midGray; ctx.fillRect(-18,-10,28,18);
   ctx.fillStyle=THEME.darkGray; ctx.fillRect(-8,-20,16,12);
-  ctx.fillStyle=THEME.zoomGreen; ctx.beginPath(); ctx.ellipse(-10,4,11,6,-0.3,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=THEME.zoomGreen; ctx.beginPath(); ctx.arc(-10,4,9,0,Math.PI*2); ctx.fill();
   ctx.fillStyle=THEME.darkGray; ctx.fillRect(-20,8,30,7);
   ctx.strokeStyle=THEME.zoomGreen; ctx.lineWidth=4; ctx.lineCap='round';
   ctx.beginPath(); ctx.moveTo(10,-4); ctx.lineTo(22,-15); ctx.lineTo(30,-10); ctx.stroke();
