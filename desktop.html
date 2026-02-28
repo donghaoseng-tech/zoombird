@@ -1962,34 +1962,36 @@ canvas.addEventListener('pointerdown', function(e) {
 }, { passive: false });
 
 window.addEventListener('keydown', function(e) {
+  var k = (e.key || '').toLowerCase();
+  var c = e.code || '';
   if (state.portalOpen) {
-    if (e.code === 'KeyY') {
+    if (c === 'KeyY' || k === 'y') {
       e.preventDefault();
       exitPortalMode();
     }
     return;
   }
-  if (e.code === 'Space') {
+  if (c === 'Space' || k === ' ') {
     e.preventDefault();
     flap();
   }
-  if (e.code === 'KeyP') {
+  if (c === 'KeyP' || k === 'p') {
     e.preventDefault();
     togglePause();
   }
-  if (e.code === 'KeyF') {
+  if (c === 'KeyF' || k === 'f') {
     e.preventDefault();
     toggleFullscreen();
   }
-  if (e.code === 'KeyT') {
+  if (c === 'KeyT' || k === 't') {
     e.preventDefault();
     toggleThemeMode();
   }
-  if (e.code === 'KeyD') {
+  if (c === 'KeyD' || k === 'd') {
     e.preventDefault();
     enterPortalMode();
   }
-  if (e.code === 'KeyY') {
+  if (c === 'KeyY' || k === 'y') {
     e.preventDefault();
     exitPortalMode();
   }
