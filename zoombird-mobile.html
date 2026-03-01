@@ -133,6 +133,37 @@ canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-acti
   border-radius: 8px;
   border-left: 3px solid rgba(164, 214, 69, 0.4);
 }
+#deathLeaderboard {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overflow-y: auto;
+  transition: max-height 0.28s ease, box-shadow 0.22s ease;
+}
+#deathLeaderboard.is-collapsed {
+  max-height: min(168px, 28vh);
+}
+#deathLeaderboard.is-expanded {
+  max-height: min(250px, 42vh);
+}
+#deathLeaderboard .death-lb-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px 0 8px;
+  font-size: 12px;
+  color: rgb(191, 197, 208);
+  opacity: 0.95;
+  pointer-events: none;
+}
+#deathLeaderboard .death-lb-arrow {
+  display: inline-block;
+  transition: transform 0.28s ease;
+}
+#deathLeaderboard.is-expanded .death-lb-arrow {
+  transform: rotate(180deg);
+}
 #langSelector {
   position: fixed;
   right: 12px;
@@ -181,8 +212,12 @@ canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-acti
     <div id="deathTitle" style="display: none; font-family: 'Montserrat','Arial Black','PingFang SC','Microsoft YaHei',sans-serif; font-size: 36px; font-weight: 900; color: rgb(232, 236, 242); margin-bottom: 24px;">游戏结束</div>
     <div id="deathScoreLabel" style="font-size: 16px; color: rgb(191, 197, 208); margin-bottom: 8px;">得分</div>
     <div id="deathScore" style="font-family: 'Montserrat','Arial Black',sans-serif; font-size: 64px; font-weight: 800; color: rgb(164, 214, 69); margin-bottom: 18px; text-shadow: 0 2px 8px rgba(164, 214, 69, 0.3);">0</div>
-    <div class="dlg-leaderboard" id="deathLeaderboard" style="width: 100%; max-width: 320px; margin: 10px auto 8px; padding: 12px; background: rgba(15, 18, 24, 0.95); border-radius: 12px; max-height: 220px; overflow-y: auto; display: none;">
+    <div class="dlg-leaderboard is-collapsed" id="deathLeaderboard" style="width: 100%; max-width: 320px; margin: 10px auto 8px; padding: 12px; background: rgba(15, 18, 24, 0.95); border-radius: 12px; display: none;" role="button" tabindex="0" aria-expanded="false">
       <div class="dlg-lb-title" id="deathRankTitle" style="font-size: 16px; font-weight: 800; color: rgb(164, 214, 69); margin-bottom: 10px; text-align: center;">🌍 全球排行榜</div>
+      <div class="death-lb-hint" id="deathLeaderboardHint">
+        <span id="deathLeaderboardHintText">点击查看更多</span>
+        <span class="death-lb-arrow" aria-hidden="true">▾</span>
+      </div>
       <div id="deathRankList" style="display: flex; flex-direction: column; gap: 6px; font-size: 14px;"></div>
     </div>
     <button id="restartFromDeathBtn" style="width: 200px; height: 50px; margin-top: -2px; font-size: 18px; font-weight: 700; background: rgb(164, 214, 69); color: rgb(18, 23, 30); border: none; border-radius: 25px; cursor: pointer; box-shadow: 0 4px 12px rgba(164, 214, 69, 0.4);">重新开始</button>
@@ -252,6 +287,7 @@ const restartFromDeathBtn = document.getElementById('restartFromDeathBtn');
 const deathLeaderboard = document.getElementById('deathLeaderboard');
 const deathRankList = document.getElementById('deathRankList');
 const deathRankTitle = document.getElementById('deathRankTitle');
+const deathLeaderboardHintText = document.getElementById('deathLeaderboardHintText');
 
 // API Configuration
 const API_BASE_URL = 'https://zoombird-api.donghaoseng.workers.dev';
@@ -261,6 +297,10 @@ const API_ENDPOINTS = {
 };
 const PLAYER_NAME_KEY = 'zoombird_player_name';
 const LANG_KEY = 'zoombird_lang';
+const DEATH_LEADERBOARD_COLLAPSED_LIMIT = 3;
+const DEATH_LEADERBOARD_EXPANDED_LIMIT = 10;
+let isDeathLeaderboardExpanded = false;
+let deathLeaderboardRequestToken = 0;
 
 const THEME = {
   zoomGreen: 'rgb(164, 214, 69)',
@@ -317,6 +357,7 @@ const I18N = {
     registration_title: '欢迎来到 ZOOMBIRD', registration_label: '请输入你的昵称:',
     btn_start_game: '开始游戏', btn_submit_score: '提交分数到排行榜', btn_restart: '重新开始',
     death_score_label: '得分', placeholder_name: '匿名玩家',
+    death_rank_expand_hint: '点击查看更多（前10）', death_rank_collapse_hint: '点击收起（前3）',
     checking: '检查中...', error_empty_name: '请输入昵称', error_name_exists: '该昵称已被使用，请选择其他昵称',
     global_rank_title: '🌍 全球排行榜', loading: '加载中...', no_data: '暂无数据', connection_error: '暂时无法连接到服务器'
   },
@@ -334,6 +375,7 @@ const I18N = {
     registration_title: 'Welcome to ZOOMBIRD', registration_label: 'Enter your player name:',
     btn_start_game: 'Start Game', btn_submit_score: 'Submit Score', btn_restart: 'Restart',
     death_score_label: 'Score', placeholder_name: 'Anonymous',
+    death_rank_expand_hint: 'Tap to view top 10', death_rank_collapse_hint: 'Tap to collapse to top 3',
     checking: 'Checking...', error_empty_name: 'Please enter a name', error_name_exists: 'This name is already used, please choose another one',
     global_rank_title: '🌍 Global Leaderboard', loading: 'Loading...', no_data: 'No data', connection_error: 'Unable to connect to server'
   }
@@ -470,12 +512,28 @@ async function autoSubmitScore() {
   }
 }
 
+function updateDeathLeaderboardUIState() {
+  deathLeaderboard.classList.toggle('is-expanded', isDeathLeaderboardExpanded);
+  deathLeaderboard.classList.toggle('is-collapsed', !isDeathLeaderboardExpanded);
+  deathLeaderboard.setAttribute('aria-expanded', isDeathLeaderboardExpanded ? 'true' : 'false');
+  if (deathLeaderboardHintText) {
+    deathLeaderboardHintText.textContent = isDeathLeaderboardExpanded ? t('death_rank_collapse_hint') : t('death_rank_expand_hint');
+  }
+}
+
 // Load leaderboard for death overlay
-async function loadDeathLeaderboard() {
+async function loadDeathLeaderboard(limit) {
+  const targetLimit = typeof limit === 'number'
+    ? limit
+    : (isDeathLeaderboardExpanded ? DEATH_LEADERBOARD_EXPANDED_LIMIT : DEATH_LEADERBOARD_COLLAPSED_LIMIT);
+
   deathLeaderboard.style.display = 'block';
+  updateDeathLeaderboardUIState();
   deathRankList.innerHTML = '<div style="text-align:center;color:rgb(191,197,208);padding:12px;">'+t('loading')+'</div>';
 
-  const result = await fetchGlobalLeaderboard(10);
+  const requestToken = ++deathLeaderboardRequestToken;
+  const result = await fetchGlobalLeaderboard(targetLimit);
+  if (requestToken !== deathLeaderboardRequestToken) return;
 
   if (result.success && result.data && result.data.length > 0) {
     deathRankList.innerHTML = result.data.map((entry, index) => {
@@ -548,6 +606,7 @@ function updateAllUIText() {
   deathTitle.textContent = t('overlay_dead');
   deathScoreLabel.textContent = t('death_score_label');
   restartFromDeathBtn.textContent = t('btn_restart');
+  updateDeathLeaderboardUIState();
   document.documentElement.lang = state.lang === 'en' ? 'en' : 'zh-CN';
 
   var langButtons = document.querySelectorAll('#langSelector .lang-btn');
@@ -766,9 +825,10 @@ function failRun(reasonKey) {
   // Show death overlay
   deathScore.textContent = state.score;
   deathOverlay.style.display = 'flex';
+  isDeathLeaderboardExpanded = false;
 
   // Load and display global leaderboard
-  loadDeathLeaderboard();
+  loadDeathLeaderboard(DEATH_LEADERBOARD_COLLAPSED_LIMIT);
 }
 function flap() {
   if(state.status==='dead') return;
@@ -916,6 +976,23 @@ function loop(ts) {
 }
 
 // === Events ===
+function toggleDeathLeaderboard() {
+  isDeathLeaderboardExpanded = !isDeathLeaderboardExpanded;
+  const limit = isDeathLeaderboardExpanded ? DEATH_LEADERBOARD_EXPANDED_LIMIT : DEATH_LEADERBOARD_COLLAPSED_LIMIT;
+  loadDeathLeaderboard(limit);
+}
+
+deathLeaderboard.addEventListener('click', function(e) {
+  e.stopPropagation();
+  toggleDeathLeaderboard();
+});
+
+deathLeaderboard.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  toggleDeathLeaderboard();
+});
+
 canvas.addEventListener('pointerdown',function(e){
   e.preventDefault();
   if(state.status==='paused') { togglePause(); return; }
@@ -1010,6 +1087,8 @@ changeNameBtn.addEventListener('click', function() {
 // Restart from death button
 restartFromDeathBtn.addEventListener('click', function() {
   deathOverlay.style.display = 'none';
+  isDeathLeaderboardExpanded = false;
+  updateDeathLeaderboardUIState();
   deathLeaderboard.style.display = 'none';
   resetRun();
   startRun();
