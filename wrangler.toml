@@ -1,0 +1,14 @@
+name = "zoombird-api"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "zoombird-leaderboard"
+database_id = "6c1b22cf-d8cf-4e95-88ee-fabc49026432"
+
+# KV namespace binding (optional, for future use)
+# [[kv_namespaces]]
+# binding = "KV"
+# id = "YOUR_KV_ID_HERE"

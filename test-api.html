@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>API Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        button { margin: 10px; padding: 10px; }
+        pre { background: #f0f0f0; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>ZoomBird API Test</h1>
+
+    <button onclick="testHealth()">Test Health Check</button>
+    <button onclick="testLeaderboard()">Test Leaderboard</button>
+    <button onclick="testSubmit()">Test Submit Score</button>
+
+    <h2>Result:</h2>
+    <pre id="result">Click a button to test...</pre>
+
+    <script>
+        const API_URL = 'https://zoombird-api.donghaoseng.workers.dev';
+
+        async function testHealth() {
+            try {
+                const response = await fetch(API_URL + '/');
+                const data = await response.json();
+                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('result').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function testLeaderboard() {
+            try {
+                const response = await fetch(API_URL + '/api/leaderboard');
+                const data = await response.json();
+                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('result').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function testSubmit() {
+            try {
+                const response = await fetch(API_URL + '/api/score', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: 'Test Player', score: 12345 })
+                });
+                const data = await response.json();
+                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('result').textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

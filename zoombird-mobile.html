@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>ZOOMBIRD</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0e14; }
+canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-action: none; }
+#pauseBtn {
+  position: fixed; top: 12px; right: 12px; z-index: 100;
+  width: 44px; height: 44px; border: 0; border-radius: 50%;
+  background: rgba(232,236,242,0.18); color: #e8ecf2;
+  font-size: 20px; font-weight: 900; line-height: 44px; text-align: center;
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  cursor: pointer; touch-action: manipulation;
+}
+#pauseBtn:active { background: rgba(232,236,242,0.32); }
+#restartDialog {
+  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 200;
+  background: rgba(49,53,64,0.65); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  flex-direction: column; align-items: center; justify-content: center;
+}
+#restartDialog.show { display: flex; }
+#restartDialog .dlg-title {
+  font-family: "Montserrat","Arial Black","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size: 28px; font-weight: 900; color: #e8ecf2; margin-bottom: 8px;
+}
+#restartDialog .dlg-score {
+  font-family: "Montserrat","Arial Black","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size: 18px; font-weight: 700; color: rgb(212,214,220); margin-bottom: 24px;
+}
+#restartDialog .dlg-btn {
+  width: 160px; height: 48px; border: 0; border-radius: 24px;
+  background: rgb(164,214,69); color: rgb(49,53,64);
+  font-family: "Montserrat","Arial Black","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size: 17px; font-weight: 800; cursor: pointer; touch-action: manipulation;
+}
+#restartDialog .dlg-btn:active { background: rgb(140,190,50); }
+#restartDialog .dlg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0;
+  width: 100%;
+  max-width: 280px;
+}
+#restartDialog .dlg-form input {
+  padding: 12px 16px;
+  font-size: 16px;
+  font-family: "Montserrat","Arial Black","PingFang SC","Microsoft YaHei",sans-serif;
+  background: rgba(15, 18, 24, 0.9);
+  border: 1px solid rgba(132, 136, 145, 0.5);
+  border-radius: 24px;
+  color: #e8ecf2;
+  text-align: center;
+  outline: none;
+}
+#restartDialog .dlg-form input:focus {
+  border-color: rgb(164,214,69);
+}
+#restartDialog .dlg-btn-secondary {
+  background: rgba(132, 136, 145, 0.4);
+  margin-top: 8px;
+}
+#restartDialog .dlg-btn-secondary:active {
+  background: rgba(132, 136, 145, 0.6);
+}
+#submitResult {
+  padding: 10px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 8px 0;
+}
+#submitResult.success {
+  background: rgba(164, 214, 69, 0.2);
+  color: rgb(164, 214, 69);
+  border: 1px solid rgba(164, 214, 69, 0.4);
+}
+#submitResult.error {
+  background: rgba(220, 80, 80, 0.2);
+  color: rgb(255, 150, 150);
+  border: 1px solid rgba(220, 80, 80, 0.4);
+}
+.dlg-leaderboard {
+  width: 100%;
+  max-width: 320px;
+  margin: 16px 0;
+  padding: 12px;
+  background: rgba(15, 18, 24, 0.8);
+  border-radius: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.dlg-lb-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: rgb(164, 214, 69);
+  margin-bottom: 10px;
+  text-align: center;
+}
+#globalRankList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+#globalRankList .rank-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(49, 53, 64, 0.6);
+  border-radius: 8px;
+  border-left: 3px solid rgba(164, 214, 69, 0.4);
+}
+#globalRankList .rank-item .rank-name {
+  color: #e8ecf2;
+  font-weight: 600;
+}
+#globalRankList .rank-item .rank-score {
+  color: rgb(164, 214, 69);
+  font-weight: 700;
+}
+</style>
+</head>
+<body>
+<canvas id="game" width="540" height="960" aria-label="ZOOMBIRD"></canvas>
+<button id="pauseBtn" type="button">⏸</button>
+<div id="restartDialog">
+  <div class="dlg-title" id="dlgTitle">你的小鸟坠机了</div>
+  <div class="dlg-score" id="dlgScore">得分: 0</div>
+  <div class="dlg-form">
+    <input type="text" id="playerName" placeholder="输入昵称" maxlength="20" />
+    <button class="dlg-btn" id="dlgSubmitBtn" type="button">提交分数</button>
+  </div>
+  <div id="submitResult" style="display:none;"></div>
+  <div class="dlg-leaderboard" id="globalLeaderboard" style="display:none;">
+    <div class="dlg-lb-title">🌍 全球排行榜</div>
+    <div id="globalRankList"></div>
+  </div>
+  <button class="dlg-btn dlg-btn-secondary" id="dlgRestartBtn" type="button">重新开始</button>
+</div>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const pauseBtn = document.getElementById('pauseBtn');
+const restartDialog = document.getElementById('restartDialog');
+const dlgTitle = document.getElementById('dlgTitle');
+const dlgScore = document.getElementById('dlgScore');
+const dlgRestartBtn = document.getElementById('dlgRestartBtn');
+const playerNameInput = document.getElementById('playerName');
+const dlgSubmitBtn = document.getElementById('dlgSubmitBtn');
+const submitResult = document.getElementById('submitResult');
+const globalLeaderboard = document.getElementById('globalLeaderboard');
+const globalRankList = document.getElementById('globalRankList');
+
+// API Configuration
+const API_BASE_URL = 'https://zoombird-api.donghaoseng.workers.dev';
+const API_ENDPOINTS = {
+  leaderboard: '/api/leaderboard',
+  submitScore: '/api/score'
+};
+
+const THEME = {
+  zoomGreen: 'rgb(164, 214, 69)',
+  pipeGreen: 'rgb(146, 208, 80)',
+  midGray: 'rgb(132, 136, 145)',
+  darkGray: 'rgb(49, 53, 64)',
+  paperGray: 'rgb(23, 27, 35)',
+  softWhite: 'rgb(232, 236, 242)',
+  brandFont: '"Montserrat","Arial Black","PingFang SC","Microsoft YaHei",sans-serif'
+};
+const MACHINE_SCROLL_FACTOR = 0.3;
+const MACHINE_SCALE_MULTIPLIER = 2.0;
+const SCROLL_BANNER_TEXT = 'VISION CREATES FUTURE';
+const HUD_SPEED_FACTOR = 0.22;
+const MACHINE_TYPES = ['mobileCrane','towerCrane','excavator','aerialLift','pumpTruck','bulldozer','miningTruck','loader'];
+const MACHINE_BASE_WIDTH = { mobileCrane:124, towerCrane:132, excavator:108, aerialLift:92, pumpTruck:130, bulldozer:102, miningTruck:122, loader:106 };
+const SCORE_KEY = 'zoombird_scores_v1';
+
+const PHYSICS = {
+  gravity: 1680,
+  flapImpulse: -430,
+  baseSpeed: 240,
+  maxSpeed: 460,
+  pipeWidth: 78,
+  pipeSpacingMax: 320,
+  pipeSpacingMin: 220,
+  groundHeight: 88
+};
+
+const state = {
+  viewW: 540, viewH: 960,
+  status: 'ready', score: 0, best: 0,
+  speed: PHYSICS.baseSpeed, elapsed: 0, distance: 0,
+  lastSpawnDistance: 0, textShift: 0,
+  bird: { y: 432, vy: 0, radius: 18, rot: 0 },
+  pipes: [], scores: [], machines: [],
+  machineTailX: -180, machineTypeCursor: 0,
+  lang: 'zh', messageKey: 'msg_start', messageData: {},
+  stars: [], starFieldW: 0, starFieldH: 0
+};
+
+const I18N = {
+  zh: {
+    canvas_score: '得分', hud_best: '最佳', unit_points: '分', no_record: '暂无记录',
+    msg_start: '点击屏幕开始飞行', msg_takeoff: 'ZOOMBIRD 起飞',
+    msg_pause: '已暂停', msg_resume: '继续飞行',
+    msg_passed: '通过 {count} 根柱子',
+    msg_fail: '失败：{reason}', reason_ground: '掉到地上', reason_pipe: '撞到柱子',
+    overlay_start: '点击屏幕开始', overlay_pause: '暂停中',
+    overlay_pause_hint: '点击暂停键继续',
+    overlay_dead: '你的小鸟坠机了', overlay_score: '得分: {score}',
+    overlay_restart: '点击屏幕重新开始'
+  }
+};
+
+function t(key, params) {
+  var template = I18N.zh[key] || key;
+  return template.replace(/\{(\w+)\}/g, function(_, name) {
+    return params && params[name] !== undefined ? String(params[name]) : '';
+  });
+}
+function setMessage(key, params) { state.messageKey = key; state.messageData = params || {}; }
+
+// ===== API Functions =====
+async function fetchGlobalLeaderboard(limit = 10) {
+  try {
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.leaderboard}?limit=${limit}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    return { success: true, data: data.data || data };
+  } catch (error) {
+    console.error('Failed to fetch leaderboard:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+async function submitScoreToGlobal(name, score) {
+  try {
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.submitScore}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, score })
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    return { success: true, data: data.data || data, rank: data.rank };
+  } catch (error) {
+    console.error('Failed to submit score:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+function renderGlobalLeaderboard(leaderboardData) {
+  if (!leaderboardData || leaderboardData.length === 0) {
+    globalRankList.innerHTML = '<div style="text-align:center;color:rgb(191,197,208);padding:12px;">暂无数据</div>';
+    return;
+  }
+  globalRankList.innerHTML = leaderboardData.map((entry, index) => {
+    const rank = entry.rank || (index + 1);
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
+    return `<div class="rank-item"><span class="rank-name">${medal} ${entry.name || 'Anonymous'}</span><span class="rank-score">${entry.score || 0}</span></div>`;
+  }).join('');
+}
+
+async function handleScoreSubmit() {
+  const playerName = playerNameInput.value.trim() || '匿名玩家';
+  const score = state.score;
+
+  dlgSubmitBtn.disabled = true;
+  dlgSubmitBtn.textContent = '提交中...';
+
+  const result = await submitScoreToGlobal(playerName, score);
+
+  dlgSubmitBtn.disabled = false;
+  dlgSubmitBtn.textContent = '提交分数';
+
+  if (result.success) {
+    submitResult.className = 'success';
+    submitResult.textContent = `成功！排名: ${result.rank || '未知'}`;
+    submitResult.style.display = 'block';
+
+    // Load and show leaderboard
+    const lbResult = await fetchGlobalLeaderboard(10);
+    if (lbResult.success) {
+      renderGlobalLeaderboard(lbResult.data);
+      globalLeaderboard.style.display = 'block';
+    }
+  } else {
+    submitResult.className = 'error';
+    submitResult.textContent = `提交失败: ${result.error || '未知错误'}`;
+    submitResult.style.display = 'block';
+  }
+}
+
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function rand(min, max) { return min + Math.random() * (max - min); }
+function birdX() { return state.viewW * 0.28; }
+function groundY() { return state.viewH - PHYSICS.groundHeight; }
+function brandFontPx(size, weight) { return String(weight||700)+' '+String(size)+'px '+THEME.brandFont; }
+function cameraX() { return state.distance * MACHINE_SCROLL_FACTOR; }
+function machineAheadRange() { return 760; }
+function machineCullRange() { return 330; }
+
+function roundedRectPath(x,y,w,h,r) {
+  var radius = Math.max(0,Math.min(r,w*0.5,h*0.5));
+  ctx.beginPath(); ctx.moveTo(x+radius,y); ctx.lineTo(x+w-radius,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+radius); ctx.lineTo(x+w,y+h-radius);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-radius,y+h); ctx.lineTo(x+radius,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-radius); ctx.lineTo(x,y+radius);
+  ctx.quadraticCurveTo(x,y,x+radius,y); ctx.closePath();
+}
+
+function rebuildStars() {
+  state.stars = []; state.starFieldW = state.viewW; state.starFieldH = state.viewH;
+  for (var i = 0; i < 52; i++) {
+    state.stars.push({ x:rand(0,state.viewW), y:rand(0,state.viewH*0.66),
+      size:rand(0.8,2.4), alpha:rand(0.22,0.9), speed:rand(0.7,2.4), phase:rand(0,Math.PI*2) });
+  }
+}
+function ensureStarField() {
+  if (!state.stars.length || Math.abs(state.starFieldW-state.viewW)>1 || Math.abs(state.starFieldH-state.viewH)>1) rebuildStars();
+}
+function drawStarField() {
+  ensureStarField();
+  var now = performance.now()*0.001;
+  var nebula = ctx.createRadialGradient(state.viewW*0.2,state.viewH*0.2,0,state.viewW*0.2,state.viewH*0.2,state.viewW*0.55);
+  nebula.addColorStop(0,'rgba(164,214,69,0.08)'); nebula.addColorStop(1,'rgba(164,214,69,0)');
+  ctx.fillStyle = nebula; ctx.fillRect(0,0,state.viewW,state.viewH);
+  for (var i=0;i<state.stars.length;i++) {
+    var star=state.stars[i], twinkle=0.58+0.42*Math.sin(now*star.speed+star.phase);
+    var alpha=clamp(star.alpha*twinkle,0.08,1), color=i%13===0?'164,214,69':'232,236,242';
+    ctx.fillStyle='rgba('+color+','+alpha.toFixed(3)+')';
+    ctx.fillRect(star.x,star.y,star.size,star.size);
+  }
+}
+
+function targetHudSpeedByScore(score) {
+  var s = PHYSICS.baseSpeed * HUD_SPEED_FACTOR;
+  return score <= 50 ? s + (70 - s) * (score / 50) : 70 + Math.floor((score - 50) / 10);
+}
+
+function drawWheel(x,y,r) {
+  ctx.fillStyle='rgba(18,22,29,0.92)'; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(202,208,220,0.55)'; ctx.beginPath(); ctx.arc(x,y,r*0.42,0,Math.PI*2); ctx.fill();
+}
+
+function drawMachineSilhouette(machine,x,baseY) {
+  var body=machine.tone, accent=machine.accent;
+  ctx.save(); ctx.translate(x,baseY); ctx.scale(machine.scale,machine.scale);
+  ctx.lineJoin='round'; ctx.lineCap='round';
+  if (machine.type==='towerCrane') {
+    ctx.fillStyle=body; ctx.fillRect(10,-98,10,78); ctx.fillRect(0,-102,98,6); ctx.fillRect(0,-20,34,8);
+    ctx.fillStyle=accent; ctx.fillRect(52,-96,3,26); ctx.fillRect(49,-70,10,4); ctx.fillRect(74,-102,20,6);
+  } else if (machine.type==='mobileCrane') {
+    ctx.fillStyle=body; ctx.fillRect(0,-24,64,14); ctx.fillRect(8,-36,18,12);
+    ctx.fillStyle=accent; ctx.fillRect(26,-24,16,8);
+    ctx.strokeStyle=accent; ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(44,-24); ctx.lineTo(95,-58); ctx.lineTo(104,-52); ctx.stroke();
+    drawWheel(14,-8,6); drawWheel(48,-8,6);
+  } else if (machine.type==='excavator') {
+    ctx.fillStyle=body; ctx.fillRect(0,-14,52,8); ctx.fillRect(8,-30,32,16);
+    ctx.fillStyle=accent; ctx.fillRect(18,-44,14,14);
+    ctx.strokeStyle=accent; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(38,-30); ctx.lineTo(60,-45); ctx.lineTo(72,-36); ctx.stroke();
+    ctx.fillStyle=body; ctx.fillRect(0,-6,52,6); drawWheel(8,-2,4); drawWheel(42,-2,4);
+  } else if (machine.type==='aerialLift') {
+    ctx.fillStyle=body; ctx.fillRect(0,-14,42,10); ctx.fillRect(4,-22,14,8);
+    ctx.strokeStyle=accent; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(20,-22); ctx.lineTo(28,-52); ctx.lineTo(36,-48); ctx.stroke();
+    ctx.fillStyle=accent; ctx.fillRect(30,-58,18,12); drawWheel(8,-2,5); drawWheel(34,-2,5);
+  } else if (machine.type==='pumpTruck') {
+    ctx.fillStyle=body; ctx.fillRect(0,-18,72,12); ctx.fillRect(4,-28,20,10);
+    ctx.strokeStyle=accent; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(30,-18); ctx.lineTo(50,-48); ctx.lineTo(80,-32); ctx.lineTo(92,-44); ctx.stroke();
+    drawWheel(12,-4,6); drawWheel(56,-4,6);
+  } else if (machine.type==='bulldozer') {
+    ctx.fillStyle=body; ctx.fillRect(0,-16,48,12); ctx.fillRect(6,-26,18,10);
+    ctx.fillStyle=accent; ctx.fillRect(-8,-12,8,14); ctx.fillRect(48,-8,6,10);
+    ctx.fillRect(0,-4,48,6);
+  } else if (machine.type==='miningTruck') {
+    ctx.fillStyle=body; ctx.fillRect(0,-22,62,16); ctx.fillRect(4,-32,18,10);
+    ctx.fillStyle=accent; ctx.fillRect(20,-22,42,6);
+    drawWheel(12,-4,7); drawWheel(50,-4,7);
+  } else if (machine.type==='loader') {
+    ctx.fillStyle=body; ctx.fillRect(0,-16,46,12); ctx.fillRect(4,-26,16,10);
+    ctx.fillStyle=accent; ctx.beginPath(); ctx.moveTo(46,-16); ctx.lineTo(58,-28); ctx.lineTo(66,-24); ctx.lineTo(76,-16); ctx.closePath(); ctx.fill();
+    drawWheel(14,-8,6); drawWheel(38,-8,7);
+  }
+  ctx.restore();
+}
+
+function pushMachine() {
+  var slot=state.machineTypeCursor, type=MACHINE_TYPES[slot%MACHINE_TYPES.length];
+  state.machineTypeCursor++;
+  var scale=rand(0.84,1.16)*MACHINE_SCALE_MULTIPLIER, width=MACHINE_BASE_WIDTH[type]*scale;
+  var spacing=rand(330,560), x=state.machineTailX+spacing;
+  var tone=slot%2===0?'rgba(102,108,121,0.56)':'rgba(70,75,87,0.6)';
+  var accent=slot%3===0?'rgba(164,214,69,0.52)':'rgba(126,132,144,0.54)';
+  state.machines.push({type:type,x:x,width:width,scale:scale,tone:tone,accent:accent});
+  state.machineTailX=x+width;
+}
+function resetMachineScene() {
+  state.machines=[]; state.machineTailX=-180;
+  while(state.machineTailX<state.viewW+machineAheadRange()) pushMachine();
+}
+function syncMachineScene() {
+  var cam=cameraX(), cull=machineCullRange(), ahead=machineAheadRange();
+  while(state.machines.length&&state.machines[0].x+state.machines[0].width<cam-cull) state.machines.shift();
+  if(!state.machines.length) state.machineTailX=cam-220;
+  while(state.machineTailX<cam+state.viewW+ahead) pushMachine();
+}
+
+function drawIndustrialHorizon() {
+  var gy=groundY(), baseY=gy+10, cam=cameraX();
+  ctx.fillStyle='rgba(132,136,145,0.12)'; ctx.fillRect(0,gy-128,state.viewW,96);
+  ctx.fillStyle='rgba(49,53,64,0.2)'; ctx.fillRect(0,gy-26,state.viewW,14);
+  ctx.strokeStyle='rgba(132,136,145,0.4)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(0,gy-26); ctx.lineTo(state.viewW,gy-26); ctx.stroke();
+  ctx.save(); ctx.globalAlpha=1;
+  for(var i=0;i<state.machines.length;i++) {
+    if(i%2===1) continue;
+    var machine=state.machines[i], drawX=machine.x-cam;
+    if(drawX>state.viewW+300||drawX+machine.width<-300) continue;
+    drawMachineSilhouette(machine,drawX,baseY);
+  }
+  ctx.restore();
+}
+
+// === Score persistence ===
+function loadScores() {
+  try { var p=JSON.parse(localStorage.getItem(SCORE_KEY)||'[]'); state.scores=Array.isArray(p)?p:[]; }
+  catch(e) { state.scores=[]; }
+  state.best=state.scores.length?state.scores[0].score:0;
+}
+function saveScore(score) {
+  state.scores.push({score:score,ts:Date.now()});
+  state.scores.sort(function(a,b){return b.score-a.score;});
+  state.scores=state.scores.slice(0,10);
+  state.best=state.scores.length?state.scores[0].score:0;
+  try{localStorage.setItem(SCORE_KEY,JSON.stringify(state.scores));}catch(e){}
+}
+
+// === Canvas resize ===
+function resizeCanvas() {
+  var rect=canvas.getBoundingClientRect();
+  var dpr=Math.min(2,window.devicePixelRatio||1);
+  state.viewW=Math.max(320,Math.round(rect.width));
+  state.viewH=Math.max(480,Math.round(rect.height));
+  canvas.width=Math.round(state.viewW*dpr);
+  canvas.height=Math.round(state.viewH*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  if(state.status==='ready') state.bird.y=state.viewH*0.45;
+  syncMachineScene();
+}
+
+// === Game logic ===
+function resetRun() {
+  state.status='ready'; state.score=0; state.speed=PHYSICS.baseSpeed;
+  state.elapsed=0; state.distance=0; state.lastSpawnDistance=0; state.textShift=0;
+  state.bird.y=state.viewH*0.45; state.bird.vy=0; state.bird.rot=0;
+  state.pipes=[]; state.machineTypeCursor=0; resetMachineScene();
+  setMessage('msg_start');
+}
+function startRun() {
+  state.status='running'; state.elapsed=0; state.distance=0;
+  state.lastSpawnDistance=0; state.speed=PHYSICS.baseSpeed;
+  setMessage('msg_takeoff');
+}
+function spawnPipe() {
+  var rawGapH=clamp(186-state.score*1.6,145,186), gapH=rawGapH*0.85;
+  var topSafe=58+gapH*0.5, bottomSafe=PHYSICS.groundHeight+62+gapH*0.5;
+  var gapY=rand(topSafe,state.viewH-bottomSafe);
+  state.pipes.push({x:state.viewW+PHYSICS.pipeWidth+18,width:PHYSICS.pipeWidth,gapY:gapY,gapH:gapH,scored:false});
+}
+function failRun(reasonKey) {
+  if(state.status==='dead') return;
+  state.status='dead'; setMessage('msg_fail',{reason:t(reasonKey)}); saveScore(state.score);
+  dlgTitle.textContent=t('overlay_dead');
+  dlgScore.textContent=t('overlay_score',{score:state.score});
+  restartDialog.classList.add('show');
+}
+function flap() {
+  if(state.status==='dead') return;
+  if(state.status==='ready') startRun();
+  if(state.status!=='running') return;
+  state.bird.vy=PHYSICS.flapImpulse;
+}
+function togglePause() {
+  if(state.status==='dead'||state.status==='ready') return;
+  state.status=state.status==='paused'?'running':'paused';
+  setMessage(state.status==='paused'?'msg_pause':'msg_resume');
+  pauseBtn.textContent=state.status==='paused'?'▶':'⏸';
+}
+
+function update(dt) {
+  if(state.status!=='running') return;
+  state.elapsed+=dt;
+  var targetHudSpeed=targetHudSpeedByScore(state.score);
+  var speedTarget=Math.min(PHYSICS.maxSpeed,targetHudSpeed/HUD_SPEED_FACTOR);
+  state.speed+=(speedTarget-state.speed)*Math.min(1,dt*1.6);
+  state.distance+=state.speed*dt;
+  state.textShift+=state.speed*dt*0.18;
+  var spacing=clamp(PHYSICS.pipeSpacingMax-state.score*1.4,PHYSICS.pipeSpacingMin,PHYSICS.pipeSpacingMax);
+  var nextSpawnDistance=state.pipes.length===0?spacing*0.5:spacing;
+  if(state.distance-state.lastSpawnDistance>=nextSpawnDistance) { spawnPipe(); state.lastSpawnDistance=state.distance; }
+  state.bird.vy+=PHYSICS.gravity*dt;
+  state.bird.y+=state.bird.vy*dt;
+  state.bird.rot=clamp(state.bird.vy/560,-0.55,1.0);
+  if(state.bird.y-state.bird.radius<0) { state.bird.y=state.bird.radius; state.bird.vy=0; }
+  if(state.bird.y+state.bird.radius>=groundY()) { state.bird.y=groundY()-state.bird.radius; failRun('reason_ground'); }
+  var bx=birdX();
+  for(var i=state.pipes.length-1;i>=0;i--) {
+    var p=state.pipes[i]; p.x-=state.speed*dt;
+    var gapTop=p.gapY-p.gapH*0.5, gapBottom=p.gapY+p.gapH*0.5;
+    if(bx+state.bird.radius>p.x&&bx-state.bird.radius<p.x+p.width) {
+      if(state.bird.y-state.bird.radius<gapTop||state.bird.y+state.bird.radius>gapBottom) failRun('reason_pipe');
+    }
+    if(!p.scored&&p.x+p.width<bx) { p.scored=true; state.score++; state.best=Math.max(state.best,state.score); setMessage('msg_passed',{count:state.score}); }
+    if(p.x+p.width<-24) state.pipes.splice(i,1);
+  }
+}
+
+// === Drawing ===
+function drawBackground() {
+  syncMachineScene();
+  var sky=ctx.createLinearGradient(0,0,0,state.viewH);
+  sky.addColorStop(0,'rgb(18,22,30)'); sky.addColorStop(0.44,'rgb(27,32,42)'); sky.addColorStop(1,'rgb(35,41,52)');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,state.viewW,state.viewH);
+  drawStarField();
+  ctx.fillStyle='rgba(164,214,69,0.24)'; ctx.font=brandFontPx(16,800); ctx.textAlign='left';
+  var step=ctx.measureText(SCROLL_BANNER_TEXT).width+300, offset=state.textShift%step;
+  for(var i=-1;i<Math.ceil(state.viewW/step)+2;i++) ctx.fillText(SCROLL_BANNER_TEXT,i*step-offset,54);
+  ctx.fillStyle='rgba(164,214,69,0.12)'; ctx.font=brandFontPx(42,900); ctx.textAlign='center';
+  ctx.fillText('ZOOMBIRD',state.viewW*0.5,state.viewH*0.35);
+  drawIndustrialHorizon();
+  var contrast=ctx.createLinearGradient(0,0,0,state.viewH);
+  contrast.addColorStop(0,'rgba(8,10,16,0.08)'); contrast.addColorStop(0.6,'rgba(8,10,16,0.18)'); contrast.addColorStop(1,'rgba(6,8,12,0.34)');
+  ctx.fillStyle=contrast; ctx.fillRect(0,0,state.viewW,state.viewH);
+}
+function drawGround() {
+  var gy=groundY();
+  ctx.fillStyle='rgb(40,46,58)'; ctx.fillRect(0,gy,state.viewW,PHYSICS.groundHeight);
+  ctx.strokeStyle=THEME.pipeGreen; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(0,gy+1); ctx.lineTo(state.viewW,gy+1); ctx.stroke();
+}
+function drawPipe(pipe) {
+  var topH=pipe.gapY-pipe.gapH*0.5, bottomY=pipe.gapY+pipe.gapH*0.5, bottomH=groundY()-bottomY;
+  ctx.fillStyle=THEME.pipeGreen;
+  ctx.fillRect(pipe.x,0,pipe.width,topH);
+  ctx.fillRect(pipe.x,bottomY,pipe.width,bottomH);
+  ctx.fillStyle=THEME.midGray;
+  ctx.fillRect(pipe.x-4,topH-12,pipe.width+8,12);
+  ctx.fillRect(pipe.x-4,bottomY,pipe.width+8,12);
+}
+function drawBird() {
+  var x=birdX(), y=state.bird.y;
+  ctx.save(); ctx.translate(x,y); ctx.rotate(state.bird.rot);
+  ctx.shadowColor='rgba(0,0,0,0.42)'; ctx.shadowBlur=6; ctx.shadowOffsetY=2;
+  ctx.fillStyle=THEME.midGray; ctx.fillRect(-18,-10,28,18);
+  ctx.fillStyle=THEME.darkGray; ctx.fillRect(-8,-20,16,12);
+  ctx.fillStyle=THEME.zoomGreen; ctx.beginPath(); ctx.arc(-10,4,9,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=THEME.darkGray; ctx.fillRect(-20,8,30,7);
+  ctx.strokeStyle=THEME.zoomGreen; ctx.lineWidth=4; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(10,-4); ctx.lineTo(22,-15); ctx.lineTo(30,-10); ctx.stroke();
+  ctx.fillStyle=THEME.midGray; ctx.beginPath(); ctx.moveTo(30,-10); ctx.lineTo(39,-8); ctx.lineTo(33,0); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.78)'; ctx.fillRect(-4,-17,8,6);
+  ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+  ctx.strokeStyle='rgba(0,0,0,0.88)'; ctx.lineWidth=1.2;
+  ctx.strokeRect(-18,-10,28,18); ctx.strokeRect(-8,-20,16,12);
+  ctx.restore();
+}
+function drawInGameScore() {
+  var boxW=160, boxH=50, x=10, y=10;
+  ctx.fillStyle='rgba(8,12,18,0.7)'; ctx.fillRect(x,y,boxW,boxH);
+  ctx.strokeStyle='rgba(132,136,145,0.6)'; ctx.lineWidth=1; ctx.strokeRect(x,y,boxW,boxH);
+  ctx.fillStyle=THEME.zoomGreen; ctx.textAlign='left'; ctx.font=brandFontPx(12,800);
+  ctx.fillText(t('canvas_score')+': '+state.score,x+8,y+20);
+  ctx.fillStyle=THEME.softWhite; ctx.font=brandFontPx(11,700);
+  ctx.fillText(t('hud_best')+': '+state.best,x+8,y+38);
+  ctx.fillStyle='rgba(164,214,69,0.24)'; ctx.fillRect(x+8,y+boxH-7,boxW-16,2);
+}
+function drawOverlay() {
+  if(state.status==='ready') {
+    ctx.fillStyle='rgba(12,16,22,0.58)'; ctx.fillRect(0,0,state.viewW,state.viewH);
+    var pw=Math.min(420,state.viewW*0.9), ph=Math.max(114,state.viewH*0.14);
+    var px=(state.viewW-pw)*0.5, py=state.viewH*0.38;
+    roundedRectPath(px,py,pw,ph,0);
+    ctx.fillStyle='rgba(28,33,44,0.62)'; ctx.fill();
+    ctx.strokeStyle='rgba(202,208,220,0.62)'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle=THEME.zoomGreen; ctx.textAlign='center'; ctx.font=brandFontPx(34,900);
+    ctx.fillText('ZOOMBIRD',state.viewW*0.5,py+38);
+    ctx.fillStyle=THEME.softWhite; ctx.font=brandFontPx(17,700);
+    ctx.fillText(t('overlay_start'),state.viewW*0.5,py+72);
+  }
+  if(state.status==='paused') {
+    ctx.fillStyle='rgba(49,53,64,0.58)'; ctx.fillRect(0,0,state.viewW,state.viewH);
+    ctx.fillStyle=THEME.softWhite; ctx.textAlign='center'; ctx.font=brandFontPx(34,900);
+    ctx.fillText(t('overlay_pause'),state.viewW*0.5,state.viewH*0.45);
+    ctx.fillStyle='rgb(212,214,220)'; ctx.font=brandFontPx(16,700);
+    ctx.fillText(t('overlay_pause_hint'),state.viewW*0.5,state.viewH*0.51);
+  }
+  if(state.status==='dead') {
+    // dialog handles restart UI
+  }
+}
+function draw() {
+  drawBackground();
+  for(var i=0;i<state.pipes.length;i++) drawPipe(state.pipes[i]);
+  drawGround(); drawBird(); drawInGameScore(); drawOverlay();
+}
+
+// === Main loop ===
+var lastTs=performance.now();
+function loop(ts) {
+  var dt=Math.min(0.032,(ts-lastTs)/1000); lastTs=ts;
+  update(dt); draw();
+  requestAnimationFrame(loop);
+}
+
+// === Events ===
+canvas.addEventListener('pointerdown',function(e){
+  e.preventDefault();
+  if(state.status==='paused') { togglePause(); return; }
+  flap();
+},{passive:false});
+
+pauseBtn.addEventListener('pointerdown',function(e){
+  e.stopPropagation(); e.preventDefault();
+},{passive:false});
+pauseBtn.addEventListener('click',function(e){
+  e.stopPropagation();
+  togglePause();
+});
+
+restartDialog.addEventListener('pointerdown',function(e){
+  e.stopPropagation(); e.preventDefault();
+},{passive:false});
+
+dlgSubmitBtn.addEventListener('click',function(e){
+  e.stopPropagation();
+  handleScoreSubmit();
+});
+
+dlgRestartBtn.addEventListener('click',function(e){
+  e.stopPropagation();
+  restartDialog.classList.remove('show');
+  submitResult.style.display = 'none';
+  globalLeaderboard.style.display = 'none';
+  playerNameInput.value = '';
+  resetRun();
+  startRun();
+});
+
+window.addEventListener('resize',function(){ resizeCanvas(); });
+
+// === Init ===
+loadScores(); resizeCanvas(); resetRun();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
