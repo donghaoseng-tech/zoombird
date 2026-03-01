@@ -13,10 +13,10 @@ var isPhone = /iPhone|iPod/i.test(ua) || (/Android/i.test(ua) && /Mobile/i.test(
 // iPad (including modern iPadOS reporting as Mac) → desktop
 // Android tablet (Android without Mobile) → desktop
 // Everything else → desktop
-var target = isPhone ? 'mobile.html' : 'desktop.html';
+var target = isPhone ? 'zoombird-mobile.html' : 'zoombird.html';
 window.location.replace(target);
 </script>
-<noscript><meta http-equiv="refresh" content="0;url=desktop.html"></noscript>
+<noscript><meta http-equiv="refresh" content="0;url=zoombird.html"></noscript>
 </head>
 <body style="background:#0a0e14;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh">
 <a id="fb" style="font-size:1.2em;color:#a4d645;text-decoration:underline">Loading...</a>

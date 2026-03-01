@@ -1,115 +1,187 @@
-# ZoomBird 排行榜 - 快速开始
+# 🐦 ZoomBird Game
 
-## 🚀 5分钟快速部署
+一个基于 Flappy Bird 的创意游戏，融合了中联重科的工业元素，支持全球排行榜功能。
 
-### 步骤 1: 安装依赖
+## 🎮 在线游戏
+
+**立即开始游戏**: [点击这里](https://你的用户名.github.io/zoombird/)
+
+## ✨ 特性
+
+- 🌍 **全球排行榜**: 基于 Cloudflare Workers + D1 数据库
+- 👤 **用户系统**: 注册昵称，自动保存最高分
+- 🏆 **实时排名**: 显示前10名玩家
+- 🌐 **多语言支持**: 中文、英文、西班牙语、俄语
+- 📱 **响应式设计**: 支持桌面和移动设备
+- 🎨 **双主题模式**: 深色工业风 / 门户办公风
+- ⌨️ **键盘快捷键**: 空格飞行、P暂停、F全屏、D切换主题
+
+## 🚀 快速开始
+
+### 玩游戏
+
+1. 访问游戏网址
+2. 首次访问时输入昵称（昵称唯一，不可重复）
+3. 点击屏幕或按空格键开始游戏
+4. 游戏结束后自动提交最高分到排行榜
+
+### 本地运行
 
 ```bash
-cd "/Users/david/ 测试/zoombird"
+# 克隆仓库
+git clone https://github.com/你的用户名/zoombird.git
+cd zoombird
+
+# 直接打开 index.html 或使用本地服务器
+python3 -m http.server 8000
+# 访问 http://localhost:8000
+```
+
+## 🔧 后端部署（可选）
+
+如果你想部署自己的排行榜后端：
+
+### 1. 安装 Wrangler
+
+```bash
 npm install -g wrangler
 ```
 
-### 步骤 2: 登录 Cloudflare
+### 2. 登录 Cloudflare
 
 ```bash
 wrangler login
 ```
 
-浏览器会打开，授权后返回终端。
-
-### 步骤 3: 创建数据库
+### 3. 创建 D1 数据库
 
 ```bash
 wrangler d1 create zoombird-leaderboard
 ```
 
-**重要**: 复制返回的 `database_id`，例如：
-```
-database_id = "abc123-def456-ghi789"
-```
+复制返回的 `database_id`。
 
-### 步骤 4: 更新配置
+### 4. 更新配置
 
-编辑 `wrangler.toml`，将 `YOUR_DATABASE_ID_HERE` 替换为上一步的 database_id：
+编辑 `wrangler.toml`，替换 `database_id`：
 
 ```toml
 [[d1_databases]]
 binding = "DB"
 database_name = "zoombird-leaderboard"
-database_id = "abc123-def456-ghi789"  # 替换这里
+database_id = "你的-database-id"
 ```
 
-### 步骤 5: 初始化数据库
+### 5. 初始化数据库
 
 ```bash
+# 本地
 wrangler d1 execute zoombird-leaderboard --file=./schema.sql
+
+# 远程
+wrangler d1 execute zoombird-leaderboard --remote --file=./schema.sql
 ```
 
-### 步骤 6: 部署
+### 6. 部署 Worker
 
 ```bash
 wrangler deploy
 ```
 
-部署成功后会显示 URL，例如：
-```
-https://zoombird-api.donghaoseng.workers.dev
-```
+### 7. 更新前端 API 地址
 
-### 步骤 7: 测试
-
-```bash
-# 测试健康检查
-curl https://zoombird-api.donghaoseng.workers.dev/
-
-# 测试获取排行榜
-curl https://zoombird-api.donghaoseng.workers.dev/api/leaderboard
-
-# 测试提交分数
-curl -X POST https://zoombird-api.donghaoseng.workers.dev/api/score \
-  -H "Content-Type: application/json" \
-  -d '{"name":"测试玩家","score":100}'
-```
-
-### 步骤 8: 更新前端（如果需要）
-
-如果你的 Worker URL 不是 `https://zoombird-api.donghaoseng.workers.dev`，需要更新前端代码。
-
-在 `zoombird.html` 和 `zoombird-mobile.html` 中找到：
+在 `zoombird.html` 和 `zoombird-mobile.html` 中更新：
 
 ```javascript
-const API_BASE_URL = 'https://zoombird-api.donghaoseng.workers.dev';
+const API_BASE_URL = 'https://你的-worker.workers.dev';
 ```
 
-替换为你的实际 URL。
+## 📊 API 接口
 
-## ✅ 完成！
-
-现在打开游戏，玩一局后就能看到排行榜了！
-
-## 🔧 常用命令
+### 获取排行榜
 
 ```bash
-# 本地开发
-wrangler dev
-
-# 查看日志
-wrangler tail
-
-# 查看排行榜数据
-wrangler d1 execute zoombird-leaderboard --command="SELECT * FROM leaderboard ORDER BY score DESC LIMIT 10"
-
-# 清空排行榜
-wrangler d1 execute zoombird-leaderboard --command="DELETE FROM leaderboard"
+GET /api/leaderboard?limit=10
 ```
 
-## 📚 更多信息
+### 提交分数
 
-查看 [DEPLOYMENT.md](./DEPLOYMENT.md) 了解详细文档。
+```bash
+POST /api/score
+Content-Type: application/json
 
-## ❓ 遇到问题？
+{
+  "name": "玩家昵称",
+  "score": 100
+}
+```
 
-1. 确保已登录：`wrangler whoami`
-2. 检查配置：`cat wrangler.toml`
-3. 查看日志：`wrangler tail`
-4. 重新部署：`wrangler deploy --force`
+### 检查昵称
+
+```bash
+POST /api/check-name
+Content-Type: application/json
+
+{
+  "name": "玩家昵称"
+}
+```
+
+## 🎯 游戏规则
+
+- 点击屏幕或按空格键让小鸟上升
+- 避开柱子和地面
+- 通过柱子获得分数
+- 速度会随着分数增加而加快
+- 每个玩家只保留最高分记录
+
+## ⌨️ 键盘快捷键
+
+- `空格` - 飞行 / 开始游戏 / 恢复暂停
+- `P` - 暂停/继续
+- `F` - 全屏/退出全屏
+- `T` - 切换主题
+- `D` - 进入门户模式
+- `Y` - 退出门户模式
+- `M` - 游戏结束后重新开始
+
+## 🛠️ 技术栈
+
+### 前端
+- 原生 JavaScript + Canvas
+- 响应式设计
+- LocalStorage 用户数据持久化
+
+### 后端
+- Cloudflare Workers (Serverless)
+- Cloudflare D1 (SQLite 数据库)
+- RESTful API
+
+## 📝 开发日志
+
+### v2.0.0 (2026-03-02)
+- ✅ 添加全球排行榜功能
+- ✅ 实现用户注册系统（昵称唯一性检查）
+- ✅ 自动提交最高分
+- ✅ 修复暂停后空格恢复游戏
+- ✅ 添加排行榜多语言支持
+- ✅ 修复切换主题后图片缺失问题
+- ✅ 清空历史排行榜数据
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📄 许可证
+
+MIT License
+
+## 🙏 致谢
+
+- 原始 Flappy Bird 游戏灵感
+- 中联重科提供的工业元素
+- Cloudflare 提供的免费 Workers 和 D1 服务
+
+---
+
+**享受游戏！🎮**
