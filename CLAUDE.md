@@ -24,3 +24,5 @@
 - **必须使用 MCP 调用 OpenAI Codex**：所有编码工作必须通过 MCP（Model Context Protocol）调用 OpenAI 的 Codex 模型完成
 - MCP 配置文件：`.mcp.json` 已配置 codex-cli-mcp-tool
 - 禁止使用 Agent 工具或其他方式进行代码编写，必须使用 MCP 服务器
+- **编码工作检查机制**：在开始任何编码工作前，必须确认 Codex 可用。如果当前编码工作不是由 Codex 执行，或者无法调用 Codex，必须立即停止并询问用户如何处理
+- **验证工作也用 Codex**：所有代码验证、测试、检查等与编码相关的工作也必须通过 Codex 完成
