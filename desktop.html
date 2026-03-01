@@ -721,12 +721,12 @@ const I18N = {
     btn_fullscreen: '全屏 (F)',
     btn_exit_fullscreen: '退出全屏 (F)',
     label_language: '语言',
-    controls_line1: '操作: 点击屏幕/空格上升，不操作会下坠。',
-    controls_line2: '规则: 撞柱子或落地即失败。通过柱子数量计分，越后面速度越快。',
+    controls_line1: '基本操作: 空格/点击上升 | P 暂停/继续 | M 重新开始',
+    controls_line2: '视图模式: T 主题切换 | D 进入门户 | Y 返回游戏 | F 全屏',
     rank_title: '飞行部队飞行绩效得分表',
     tips_title: '提示',
-    tips_line1: '点击屏幕或空格上升',
-    tips_line2: 'P 键暂停 / 继续',
+    tips_line1: '游戏规则: 撞柱子或落地即失败，通过柱子计分，难度递增',
+    tips_line2: '',
     tips_line3: 'F 全屏 | T 主题 | D 门户 | Y 返回',
     unit_points: '分',
     no_record: '暂无记录',
@@ -768,12 +768,12 @@ const I18N = {
     btn_fullscreen: 'Fullscreen (F)',
     btn_exit_fullscreen: 'Exit Fullscreen (F)',
     label_language: 'Language',
-    controls_line1: 'Control: Tap/Space to rise, otherwise you fall.',
-    controls_line2: 'Rule: Hit a pipe or ground and you fail. Pass pipes to score.',
+    controls_line1: 'Controls: Space/Click to rise | P Pause/Resume | M Restart',
+    controls_line2: 'View Modes: T Theme | D Portal | Y Return | F Fullscreen',
     rank_title: 'Flight Performance Board',
     tips_title: 'Tips',
-    tips_line1: 'Tap screen or press Space to rise',
-    tips_line2: 'Press P to pause/resume',
+    tips_line1: 'Rules: Avoid pipes and ground. Score by passing pipes. Difficulty increases.',
+    tips_line2: '',
     tips_line3: 'F Fullscreen | T Theme | D Portal | Y Return',
     unit_points: 'pts',
     no_record: 'No records yet',
@@ -815,12 +815,12 @@ const I18N = {
     btn_fullscreen: 'Pantalla completa (F)',
     btn_exit_fullscreen: 'Salir de pantalla completa (F)',
     label_language: 'Idioma',
-    controls_line1: 'Control: Toca/Espacio para subir; si no, caerás.',
-    controls_line2: 'Regla: Chocar con tubo o suelo = derrota. Pasa tubos para puntuar.',
+    controls_line1: 'Controles: Espacio/Clic para subir | P Pausa/Reanudar | M Reiniciar',
+    controls_line2: 'Modos de vista: T Tema | D Portal | Y Volver | F Pantalla completa',
     rank_title: 'Tabla de Rendimiento de Vuelo',
     tips_title: 'Consejos',
-    tips_line1: 'Toca la pantalla o pulsa Espacio para subir',
-    tips_line2: 'Pulsa P para pausar/reanudar',
+    tips_line1: 'Reglas: Evita tubos y suelo. Puntúa pasando tubos. Dificultad aumenta.',
+    tips_line2: '',
     tips_line3: 'F Pantalla completa | T Tema | D Portal | Y Volver',
     unit_points: 'pts',
     no_record: 'Sin registros',
@@ -862,11 +862,12 @@ const I18N = {
     btn_fullscreen: 'Полный экран (F)',
     btn_exit_fullscreen: 'Выйти из полного экрана (F)',
     label_language: 'Язык',
-    controls_line1: 'Управление: касание/Space поднимает, без нажатия падение.',
-    controls_line2: 'Правило: столкновение с трубой или землёй — проигрыш.',
+    controls_line1: 'Управление: Space/Клик для подъёма | P Пауза/Продолжить | M Рестарт',
+    controls_line2: 'Режимы просмотра: T Тема | D Портал | Y Назад | F Полный экран',
     rank_title: 'Таблица лётной эффективности',
     tips_title: 'Подсказки',
-    tips_line1: 'Коснитесь экрана или нажмите Space для подъёма',
+    tips_line1: 'Правила: Избегайте труб и земли. Очки за прохождение труб. Сложность растёт.',
+    tips_line2: '',
     tips_line2: 'Нажмите P для паузы/продолжения',
     tips_line3: 'F Экран | T Тема | D Портал | Y Назад',
     unit_points: 'очк.',
@@ -1970,6 +1971,10 @@ window.addEventListener('keydown', function(e) {
   }
   if (c === 'Space' || k === ' ') {
     e.preventDefault();
+    if (state.status === 'paused') {
+      togglePause();
+      return;
+    }
     flap();
   }
   if (c === 'KeyP' || k === 'p') {
