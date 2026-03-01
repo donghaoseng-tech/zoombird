@@ -128,19 +128,38 @@ canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-acti
 <body>
 <canvas id="game" width="540" height="960" aria-label="ZOOMBIRD"></canvas>
 <button id="pauseBtn" type="button">⏸</button>
+
+<!-- User Info Display -->
+<div id="userInfo" style="position: fixed; top: 60px; left: 12px; right: 12px; z-index: 90; padding: 8px 12px; background: rgba(15, 18, 24, 0.85); border: 1px solid rgba(132, 136, 145, 0.42); border-radius: 8px; color: rgb(232, 236, 242); font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);">
+  <div><span id="labelPlayer">玩家</span>: <span id="currentPlayerName" style="font-weight: 700; color: rgb(164, 214, 69);">未登录</span></div>
+  <button id="changeNameBtn" class="dlg-btn" type="button" style="width: auto; height: 28px; padding: 0 10px; font-size: 0.8rem; border-radius: 14px;">更改昵称</button>
+</div>
+
 <div id="restartDialog">
   <div class="dlg-title" id="dlgTitle">你的小鸟坠机了</div>
   <div class="dlg-score" id="dlgScore">得分: 0</div>
-  <div class="dlg-form">
+  <div class="dlg-form" style="display:none;">
     <input type="text" id="playerName" placeholder="输入昵称" maxlength="20" />
     <button class="dlg-btn" id="dlgSubmitBtn" type="button">提交分数</button>
   </div>
   <div id="submitResult" style="display:none;"></div>
   <div class="dlg-leaderboard" id="globalLeaderboard" style="display:none;">
-    <div class="dlg-lb-title">🌍 全球排行榜</div>
+    <div class="dlg-lb-title" id="globalRankTitle">🌍 全球排行榜</div>
     <div id="globalRankList"></div>
   </div>
   <button class="dlg-btn dlg-btn-secondary" id="dlgRestartBtn" type="button">重新开始</button>
+</div>
+
+<!-- Registration Modal -->
+<div id="registrationModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 300; background: rgba(49,53,64,0.75); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); flex-direction: column; align-items: center; justify-content: center;">
+  <div style="background: rgba(15, 18, 24, 0.95); padding: 24px; border-radius: 12px; border: 1px solid rgba(132, 136, 145, 0.5); max-width: 320px; width: 90%;">
+    <div class="dlg-title" id="registrationTitle" style="text-align: center; margin-bottom: 16px;">欢迎来到 ZOOMBIRD</div>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <label for="registerPlayerName" id="registrationLabel" style="font-size: 14px; color: rgb(212, 214, 220); font-family: 'Montserrat','Arial Black','PingFang SC','Microsoft YaHei',sans-serif;">请输入你的昵称:</label>
+      <input type="text" id="registerPlayerName" maxlength="20" placeholder="匿名玩家" style="padding: 12px 16px; font-size: 16px; font-family: 'Montserrat','Arial Black','PingFang SC','Microsoft YaHei',sans-serif; background: rgba(15, 18, 24, 0.9); border: 1px solid rgba(132, 136, 145, 0.5); border-radius: 24px; color: rgb(232, 236, 242); text-align: center; outline: none;" />
+      <button id="registerBtn" class="dlg-btn" type="button">开始游戏</button>
+    </div>
+  </div>
 </div>
 <script>
 const canvas = document.getElementById('game');
@@ -156,12 +175,24 @@ const submitResult = document.getElementById('submitResult');
 const globalLeaderboard = document.getElementById('globalLeaderboard');
 const globalRankList = document.getElementById('globalRankList');
 
+// Registration modal elements
+const registrationModal = document.getElementById('registrationModal');
+const registerPlayerName = document.getElementById('registerPlayerName');
+const registerBtn = document.getElementById('registerBtn');
+const currentPlayerNameEl = document.getElementById('currentPlayerName');
+const changeNameBtn = document.getElementById('changeNameBtn');
+const labelPlayerEl = document.getElementById('labelPlayer');
+const registrationTitle = document.getElementById('registrationTitle');
+const registrationLabel = document.getElementById('registrationLabel');
+const globalRankTitle = document.getElementById('globalRankTitle');
+
 // API Configuration
 const API_BASE_URL = 'https://zoombird-api.donghaoseng.workers.dev';
 const API_ENDPOINTS = {
   leaderboard: '/api/leaderboard',
   submitScore: '/api/score'
 };
+const PLAYER_NAME_KEY = 'zoombird_player_name';
 
 const THEME = {
   zoomGreen: 'rgb(164, 214, 69)',
@@ -213,7 +244,12 @@ const I18N = {
     overlay_start: '点击屏幕开始', overlay_pause: '暂停中',
     overlay_pause_hint: '点击暂停键继续',
     overlay_dead: '你的小鸟坠机了', overlay_score: '得分: {score}',
-    overlay_restart: '点击屏幕重新开始'
+    overlay_restart: '点击屏幕重新开始',
+    label_player: '玩家', not_logged_in: '未登录', btn_change_name: '更改昵称',
+    registration_title: '欢迎来到 ZOOMBIRD', registration_label: '请输入你的昵称:',
+    btn_start_game: '开始游戏', btn_submit_score: '提交分数到排行榜',
+    checking: '检查中...', error_empty_name: '请输入昵称', error_name_exists: '该昵称已被使用，请选择其他昵称',
+    global_rank_title: '🌍 全球排行榜', loading: '加载中...', no_data: '暂无数据', connection_error: '暂时无法连接到服务器'
   }
 };
 
@@ -241,6 +277,25 @@ async function fetchGlobalLeaderboard(limit = 10) {
   }
 }
 
+// Check if username exists in leaderboard
+async function checkNameExists(name) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/check-name`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const data = await response.json();
+    return data.exists || false;
+  } catch (error) {
+    console.error('Failed to check name:', error);
+    return false; // If check fails, allow the name
+  }
+}
+
 async function submitScoreToGlobal(name, score) {
   try {
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.submitScore}`, {
@@ -259,7 +314,7 @@ async function submitScoreToGlobal(name, score) {
 
 function renderGlobalLeaderboard(leaderboardData) {
   if (!leaderboardData || leaderboardData.length === 0) {
-    globalRankList.innerHTML = '<div style="text-align:center;color:rgb(191,197,208);padding:12px;">暂无数据</div>';
+    globalRankList.innerHTML = '<div style="text-align:center;color:rgb(191,197,208);padding:12px;">'+t('no_data')+'</div>';
     return;
   }
   globalRankList.innerHTML = leaderboardData.map((entry, index) => {
@@ -270,7 +325,7 @@ function renderGlobalLeaderboard(leaderboardData) {
 }
 
 async function handleScoreSubmit() {
-  const playerName = playerNameInput.value.trim() || '匿名玩家';
+  const playerName = getPlayerName() || '匿名玩家';
   const score = state.score;
 
   dlgSubmitBtn.disabled = true;
@@ -299,6 +354,35 @@ async function handleScoreSubmit() {
   }
 }
 
+// Auto-submit score to global leaderboard
+async function autoSubmitScore() {
+  const playerName = getPlayerName();
+  if (!playerName) {
+    console.log('No player name set, skipping auto-submit');
+    return;
+  }
+
+  const score = state.score;
+
+  // Only submit if score > 0
+  if (score <= 0) {
+    return;
+  }
+
+  console.log(`Auto-submitting score: ${score} for player: ${playerName}`);
+
+  try {
+    const result = await submitScoreToGlobal(playerName, score);
+    if (result.success) {
+      console.log(`Score submitted successfully! Rank: ${result.rank}`);
+    } else {
+      console.error('Failed to submit score:', result.error);
+    }
+  } catch (error) {
+    console.error('Error auto-submitting score:', error);
+  }
+}
+
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 function rand(min, max) { return min + Math.random() * (max - min); }
 function birdX() { return state.viewW * 0.28; }
@@ -307,6 +391,50 @@ function brandFontPx(size, weight) { return String(weight||700)+' '+String(size)
 function cameraX() { return state.distance * MACHINE_SCROLL_FACTOR; }
 function machineAheadRange() { return 760; }
 function machineCullRange() { return 330; }
+
+// Player name management
+function getPlayerName() {
+  try {
+    return localStorage.getItem(PLAYER_NAME_KEY) || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function setPlayerName(name) {
+  try {
+    localStorage.setItem(PLAYER_NAME_KEY, name);
+    updatePlayerNameDisplay();
+  } catch (e) {}
+}
+
+function updatePlayerNameDisplay() {
+  const name = getPlayerName();
+  if (name) {
+    currentPlayerNameEl.textContent = name;
+  } else {
+    currentPlayerNameEl.textContent = t('not_logged_in');
+  }
+}
+
+function showRegistrationModal() {
+  registrationModal.style.display = 'flex';
+  registerPlayerName.value = '';
+  setTimeout(() => registerPlayerName.focus(), 100);
+}
+
+function hideRegistrationModal() {
+  registrationModal.style.display = 'none';
+}
+
+function applyLanguage() {
+  labelPlayerEl.textContent = t('label_player');
+  registrationTitle.textContent = t('registration_title');
+  registrationLabel.textContent = t('registration_label');
+  registerBtn.textContent = t('btn_start_game');
+  globalRankTitle.textContent = t('global_rank_title');
+  updatePlayerNameDisplay();
+}
 
 function roundedRectPath(x,y,w,h,r) {
   var radius = Math.max(0,Math.min(r,w*0.5,h*0.5));
@@ -478,13 +606,20 @@ function spawnPipe() {
 function failRun(reasonKey) {
   if(state.status==='dead') return;
   state.status='dead'; setMessage('msg_fail',{reason:t(reasonKey)}); saveScore(state.score);
-  dlgTitle.textContent=t('overlay_dead');
-  dlgScore.textContent=t('overlay_score',{score:state.score});
-  restartDialog.classList.add('show');
+
+  // Auto-submit score to global leaderboard
+  autoSubmitScore();
 }
 function flap() {
   if(state.status==='dead') return;
   if(state.status==='ready') startRun();
+
+  // Allow space to resume from pause
+  if(state.status==='paused') {
+    togglePause();
+    return;
+  }
+
   if(state.status!=='running') return;
   state.bird.vy=PHYSICS.flapImpulse;
 }
@@ -654,10 +789,78 @@ dlgRestartBtn.addEventListener('click',function(e){
   startRun();
 });
 
+// Registration modal event listeners
+registerBtn.addEventListener('click', async function() {
+  const name = registerPlayerName.value.trim();
+  if (!name) {
+    alert(t('error_empty_name') || '请输入昵称');
+    return;
+  }
+
+  // Check if name already exists
+  registerBtn.disabled = true;
+  registerBtn.textContent = t('checking') || '检查中...';
+
+  const exists = await checkNameExists(name);
+
+  registerBtn.disabled = false;
+  registerBtn.textContent = t('btn_start_game');
+
+  if (exists) {
+    alert(t('error_name_exists') || '该昵称已被使用，请选择其他昵称');
+    return;
+  }
+
+  setPlayerName(name);
+  hideRegistrationModal();
+});
+
+registerPlayerName.addEventListener('keypress', async function(e) {
+  if (e.key === 'Enter') {
+    const name = registerPlayerName.value.trim();
+    if (!name) {
+      alert(t('error_empty_name') || '请输入昵称');
+      return;
+    }
+
+    // Check if name already exists
+    registerBtn.disabled = true;
+    registerBtn.textContent = t('checking') || '检查中...';
+
+    const exists = await checkNameExists(name);
+
+    registerBtn.disabled = false;
+    registerBtn.textContent = t('btn_start_game');
+
+    if (exists) {
+      alert(t('error_name_exists') || '该昵称已被使用，请选择其他昵称');
+      return;
+    }
+
+    setPlayerName(name);
+    hideRegistrationModal();
+  }
+});
+
+// Change name button
+changeNameBtn.addEventListener('click', function() {
+  showRegistrationModal();
+});
+
 window.addEventListener('resize',function(){ resizeCanvas(); });
 
 // === Init ===
 loadScores(); resizeCanvas(); resetRun();
+
+// Apply language translations
+applyLanguage();
+
+// Check if player name exists, if not show registration modal
+updatePlayerNameDisplay();
+if (!getPlayerName()) {
+  showRegistrationModal();
+}
+
 requestAnimationFrame(loop);
 </script>
 </body>
