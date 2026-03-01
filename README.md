@@ -4,7 +4,7 @@
 
 ## 🎮 在线游戏
 
-**立即开始游戏**: [点击这里](https://你的用户名.github.io/zoombird/)
+**立即开始游戏**: [https://donghaoseng-tech.github.io/zoombird/](https://donghaoseng-tech.github.io/zoombird/)
 
 ## ✨ 特性
 
@@ -29,7 +29,7 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/你的用户名/zoombird.git
+git clone https://github.com/donghaoseng-tech/zoombird.git
 cd zoombird
 
 # 直接打开 index.html 或使用本地服务器
