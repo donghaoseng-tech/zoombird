@@ -123,6 +123,44 @@ canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-acti
   color: rgb(164, 214, 69);
   font-weight: 700;
 }
+#deathRankList .rank-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(49, 53, 64, 0.7);
+  border-radius: 8px;
+  border-left: 3px solid rgba(164, 214, 69, 0.4);
+}
+#langSelector {
+  position: fixed;
+  right: 12px;
+  bottom: 74px;
+  z-index: 260;
+  display: flex;
+  gap: 6px;
+}
+.lang-btn {
+  width: 40px;
+  height: 30px;
+  border: 1px solid rgba(132, 136, 145, 0.55);
+  border-radius: 15px;
+  background: rgba(15, 18, 24, 0.8);
+  color: rgb(232, 236, 242);
+  font-family: "Montserrat","Arial Black","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.lang-btn.active {
+  background: rgb(164, 214, 69);
+  border-color: rgb(164, 214, 69);
+  color: rgb(18, 23, 30);
+}
+.lang-btn:hover {
+  border-color: rgba(164, 214, 69, 0.85);
+  transform: translateY(-1px);
+}
 </style>
 </head>
 <body>
@@ -139,14 +177,19 @@ canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-acti
 <div id="deathOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 250; background: rgba(10, 14, 20, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); flex-direction: column; align-items: center; justify-content: center;">
   <div style="text-align: center; padding: 20px;">
     <div id="deathTitle" style="font-family: 'Montserrat','Arial Black','PingFang SC','Microsoft YaHei',sans-serif; font-size: 36px; font-weight: 900; color: rgb(232, 236, 242); margin-bottom: 24px;">游戏结束</div>
-    <div style="font-size: 16px; color: rgb(191, 197, 208); margin-bottom: 12px;">得分</div>
+    <div id="deathScoreLabel" style="font-size: 16px; color: rgb(191, 197, 208); margin-bottom: 12px;">得分</div>
     <div id="deathScore" style="font-family: 'Montserrat','Arial Black',sans-serif; font-size: 64px; font-weight: 800; color: rgb(164, 214, 69); margin-bottom: 40px; text-shadow: 0 2px 8px rgba(164, 214, 69, 0.3);">0</div>
-    <div class="dlg-leaderboard" id="deathLeaderboard" style="width: 100%; max-width: 320px; margin: 20px auto; padding: 12px; background: rgba(15, 18, 24, 0.8); border-radius: 12px; max-height: 280px; overflow-y: auto; display: none;">
+    <div class="dlg-leaderboard" id="deathLeaderboard" style="width: 100%; max-width: 320px; margin: 20px auto; padding: 12px; background: rgba(15, 18, 24, 0.95); border-radius: 12px; max-height: 280px; overflow-y: auto; display: none;">
       <div class="dlg-lb-title" id="deathRankTitle" style="font-size: 16px; font-weight: 800; color: rgb(164, 214, 69); margin-bottom: 10px; text-align: center;">🌍 全球排行榜</div>
       <div id="deathRankList" style="display: flex; flex-direction: column; gap: 6px; font-size: 14px;"></div>
     </div>
     <button id="restartFromDeathBtn" style="width: 200px; height: 50px; font-size: 18px; font-weight: 700; background: rgb(164, 214, 69); color: rgb(18, 23, 30); border: none; border-radius: 25px; cursor: pointer; box-shadow: 0 4px 12px rgba(164, 214, 69, 0.4);">重新开始</button>
   </div>
+</div>
+
+<div id="langSelector" aria-label="Language selector">
+  <button class="lang-btn active" type="button" data-lang="zh">中</button>
+  <button class="lang-btn" type="button" data-lang="en">EN</button>
 </div>
 
 <div id="restartDialog">
@@ -202,6 +245,7 @@ const globalRankTitle = document.getElementById('globalRankTitle');
 const deathOverlay = document.getElementById('deathOverlay');
 const deathScore = document.getElementById('deathScore');
 const deathTitle = document.getElementById('deathTitle');
+const deathScoreLabel = document.getElementById('deathScoreLabel');
 const restartFromDeathBtn = document.getElementById('restartFromDeathBtn');
 const deathLeaderboard = document.getElementById('deathLeaderboard');
 const deathRankList = document.getElementById('deathRankList');
@@ -214,6 +258,7 @@ const API_ENDPOINTS = {
   submitScore: '/api/score'
 };
 const PLAYER_NAME_KEY = 'zoombird_player_name';
+const LANG_KEY = 'zoombird_lang';
 
 const THEME = {
   zoomGreen: 'rgb(164, 214, 69)',
@@ -268,14 +313,33 @@ const I18N = {
     overlay_restart: '点击屏幕重新开始',
     label_player: '玩家', not_logged_in: '未登录', btn_change_name: '更改昵称',
     registration_title: '欢迎来到 ZOOMBIRD', registration_label: '请输入你的昵称:',
-    btn_start_game: '开始游戏', btn_submit_score: '提交分数到排行榜',
+    btn_start_game: '开始游戏', btn_submit_score: '提交分数到排行榜', btn_restart: '重新开始',
+    death_score_label: '得分', placeholder_name: '匿名玩家',
     checking: '检查中...', error_empty_name: '请输入昵称', error_name_exists: '该昵称已被使用，请选择其他昵称',
     global_rank_title: '🌍 全球排行榜', loading: '加载中...', no_data: '暂无数据', connection_error: '暂时无法连接到服务器'
+  },
+  en: {
+    canvas_score: 'Score', hud_best: 'Best', unit_points: 'pts', no_record: 'No record',
+    msg_start: 'Tap to start flying', msg_takeoff: 'ZOOMBIRD takeoff',
+    msg_pause: 'Paused', msg_resume: 'Resume',
+    msg_passed: 'Passed {count} pipes',
+    msg_fail: 'Failed: {reason}', reason_ground: 'Hit the ground', reason_pipe: 'Hit a pipe',
+    overlay_start: 'Tap screen to start', overlay_pause: 'Paused',
+    overlay_pause_hint: 'Tap pause button to continue',
+    overlay_dead: 'Game Over', overlay_score: 'Score: {score}',
+    overlay_restart: 'Tap screen to restart',
+    label_player: 'Player', not_logged_in: 'Not logged in', btn_change_name: 'Change Name',
+    registration_title: 'Welcome to ZOOMBIRD', registration_label: 'Enter your player name:',
+    btn_start_game: 'Start Game', btn_submit_score: 'Submit Score', btn_restart: 'Restart',
+    death_score_label: 'Score', placeholder_name: 'Anonymous',
+    checking: 'Checking...', error_empty_name: 'Please enter a name', error_name_exists: 'This name is already used, please choose another one',
+    global_rank_title: '🌍 Global Leaderboard', loading: 'Loading...', no_data: 'No data', connection_error: 'Unable to connect to server'
   }
 };
 
 function t(key, params) {
-  var template = I18N.zh[key] || key;
+  var langPack = I18N[state.lang] || I18N.zh;
+  var template = langPack[key] || I18N.zh[key] || key;
   return template.replace(/\{(\w+)\}/g, function(_, name) {
     return params && params[name] !== undefined ? String(params[name]) : '';
   });
@@ -467,12 +531,60 @@ function hideRegistrationModal() {
 }
 
 function applyLanguage() {
+  updateAllUIText();
+}
+
+function updateAllUIText() {
   labelPlayerEl.textContent = t('label_player');
+  changeNameBtn.textContent = t('btn_change_name');
   registrationTitle.textContent = t('registration_title');
   registrationLabel.textContent = t('registration_label');
+  registerPlayerName.placeholder = t('placeholder_name');
   registerBtn.textContent = t('btn_start_game');
   globalRankTitle.textContent = t('global_rank_title');
+  deathRankTitle.textContent = t('global_rank_title');
+  deathTitle.textContent = t('overlay_dead');
+  deathScoreLabel.textContent = t('death_score_label');
+  restartFromDeathBtn.textContent = t('btn_restart');
+  document.documentElement.lang = state.lang === 'en' ? 'en' : 'zh-CN';
+
+  var langButtons = document.querySelectorAll('#langSelector .lang-btn');
+  for (var i = 0; i < langButtons.length; i++) {
+    var btn = langButtons[i];
+    var isActive = btn.getAttribute('data-lang') === state.lang;
+    btn.classList.toggle('active', isActive);
+  }
+
   updatePlayerNameDisplay();
+}
+
+function initLangSelector() {
+  var savedLang = null;
+  try {
+    savedLang = localStorage.getItem(LANG_KEY);
+  } catch (e) {}
+
+  if (savedLang && I18N[savedLang]) {
+    state.lang = savedLang;
+  }
+
+  var langButtons = document.querySelectorAll('#langSelector .lang-btn');
+  for (var i = 0; i < langButtons.length; i++) {
+    langButtons[i].addEventListener('click', function() {
+      var selectedLang = this.getAttribute('data-lang');
+      if (!I18N[selectedLang] || selectedLang === state.lang) return;
+      state.lang = selectedLang;
+      try {
+        localStorage.setItem(LANG_KEY, selectedLang);
+      } catch (e) {}
+      updateAllUIText();
+      if (deathOverlay.style.display === 'flex') {
+        loadDeathLeaderboard();
+      }
+    });
+  }
+
+  updateAllUIText();
 }
 
 function roundedRectPath(x,y,w,h,r) {
@@ -902,6 +1014,7 @@ restartFromDeathBtn.addEventListener('click', function() {
 });
 
 window.addEventListener('resize',function(){ resizeCanvas(); });
+window.addEventListener('load',function(){ initLangSelector(); });
 
 // === Init ===
 loadScores(); resizeCanvas(); resetRun();
