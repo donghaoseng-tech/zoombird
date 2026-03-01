@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS scores (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nickname TEXT NOT NULL,
+  score INTEGER NOT NULL,
+  timestamp INTEGER NOT NULL,
+  ip_hash TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_score ON scores(score DESC);
