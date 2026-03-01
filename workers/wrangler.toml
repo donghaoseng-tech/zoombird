@@ -1,7 +1,10 @@
 name = "zoombird-api"
 main = "src/index.js"
-compatibility_date = "2024-01-01"
+compatibility_date = "2026-01-01"
 
+# Note: Replace placeholder IDs with actual values after creating resources:
+# - Run: wrangler d1 create zoombird-leaderboard
+# - Run: wrangler kv:namespace create "KV"
 [[d1_databases]]
 binding = "DB"
 database_name = "zoombird-leaderboard"
