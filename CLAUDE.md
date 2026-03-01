@@ -18,3 +18,9 @@
 - Claude 不直接编写或修改代码文件，所有代码操作交由 Codex 完成
 - Claude 可以阅读代码用于分析问题和制定方案
 - Git 操作（commit、push）由 Claude 执行
+
+## 技术实现
+
+- **必须使用 MCP 调用 OpenAI Codex**：所有编码工作必须通过 MCP（Model Context Protocol）调用 OpenAI 的 Codex 模型完成
+- MCP 配置文件：`.mcp.json` 已配置 codex-cli-mcp-tool
+- 禁止使用 Agent 工具或其他方式进行代码编写，必须使用 MCP 服务器

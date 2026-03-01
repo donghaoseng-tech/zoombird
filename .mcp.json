@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "codex": {
+      "command": "npx",
+      "args": ["-y", "codex-cli-mcp-tool"],
+      "env": {
+        "OPENAI_API_KEY": "sk-user-6fd81739b0d211ebc34954ee",
+        "OPENAI_BASE_URL": "https://api.tabcode.cc/openai",
+        "CODEX_MODEL": "gpt-5.3-codex"
+      }
+    }
+  }
+}

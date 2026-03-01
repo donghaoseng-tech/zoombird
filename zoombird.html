@@ -2371,8 +2371,11 @@ function drawInGameScore() {
   const boxW = 162;
   const boxH = 54;
   const x = 14;
-  const y = 12;
   const isOffice = state.themeMode === 'office';
+
+  // 在 office 主题时，将分数移到左下角
+  const y = isOffice ? (state.viewH - boxH - 14) : 12;
+
   ctx.fillStyle = isOffice ? 'rgba(248, 248, 248, 0.92)' : 'rgba(8, 12, 18, 0.7)';
   ctx.fillRect(x, y, boxW, boxH);
   ctx.strokeStyle = isOffice ? 'rgba(33, 36, 42, 0.28)' : 'rgba(132, 136, 145, 0.6)';

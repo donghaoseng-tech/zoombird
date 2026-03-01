@@ -141,6 +141,10 @@ canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-acti
     <div id="deathTitle" style="font-family: 'Montserrat','Arial Black','PingFang SC','Microsoft YaHei',sans-serif; font-size: 36px; font-weight: 900; color: rgb(232, 236, 242); margin-bottom: 24px;">游戏结束</div>
     <div style="font-size: 16px; color: rgb(191, 197, 208); margin-bottom: 12px;">得分</div>
     <div id="deathScore" style="font-family: 'Montserrat','Arial Black',sans-serif; font-size: 64px; font-weight: 800; color: rgb(164, 214, 69); margin-bottom: 40px; text-shadow: 0 2px 8px rgba(164, 214, 69, 0.3);">0</div>
+    <div class="dlg-leaderboard" id="deathLeaderboard" style="width: 100%; max-width: 320px; margin: 20px auto; padding: 12px; background: rgba(15, 18, 24, 0.8); border-radius: 12px; max-height: 280px; overflow-y: auto; display: none;">
+      <div class="dlg-lb-title" id="deathRankTitle" style="font-size: 16px; font-weight: 800; color: rgb(164, 214, 69); margin-bottom: 10px; text-align: center;">🌍 全球排行榜</div>
+      <div id="deathRankList" style="display: flex; flex-direction: column; gap: 6px; font-size: 14px;"></div>
+    </div>
     <button id="restartFromDeathBtn" style="width: 200px; height: 50px; font-size: 18px; font-weight: 700; background: rgb(164, 214, 69); color: rgb(18, 23, 30); border: none; border-radius: 25px; cursor: pointer; box-shadow: 0 4px 12px rgba(164, 214, 69, 0.4);">重新开始</button>
   </div>
 </div>
@@ -199,6 +203,9 @@ const deathOverlay = document.getElementById('deathOverlay');
 const deathScore = document.getElementById('deathScore');
 const deathTitle = document.getElementById('deathTitle');
 const restartFromDeathBtn = document.getElementById('restartFromDeathBtn');
+const deathLeaderboard = document.getElementById('deathLeaderboard');
+const deathRankList = document.getElementById('deathRankList');
+const deathRankTitle = document.getElementById('deathRankTitle');
 
 // API Configuration
 const API_BASE_URL = 'https://zoombird-api.donghaoseng.workers.dev';
@@ -223,7 +230,7 @@ const SCROLL_BANNER_TEXT = 'VISION CREATES FUTURE';
 const HUD_SPEED_FACTOR = 0.22;
 const MACHINE_TYPES = ['mobileCrane','towerCrane','excavator','aerialLift','pumpTruck','bulldozer','miningTruck','loader'];
 const MACHINE_BASE_WIDTH = { mobileCrane:124, towerCrane:132, excavator:108, aerialLift:92, pumpTruck:130, bulldozer:102, miningTruck:122, loader:106 };
-const SCORE_KEY = 'zoombird_scores_v1';
+const SCORE_KEY = 'zoombird_scores';
 
 const PHYSICS = {
   gravity: 1680,
@@ -394,6 +401,24 @@ async function autoSubmitScore() {
     }
   } catch (error) {
     console.error('Error auto-submitting score:', error);
+  }
+}
+
+// Load leaderboard for death overlay
+async function loadDeathLeaderboard() {
+  deathLeaderboard.style.display = 'block';
+  deathRankList.innerHTML = '<div style="text-align:center;color:rgb(191,197,208);padding:12px;">'+t('loading')+'</div>';
+
+  const result = await fetchGlobalLeaderboard(10);
+
+  if (result.success && result.data && result.data.length > 0) {
+    deathRankList.innerHTML = result.data.map((entry, index) => {
+      const rank = entry.rank || (index + 1);
+      const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
+      return `<div class="rank-item"><span class="rank-name">${medal} ${entry.name || 'Anonymous'}</span><span class="rank-score">${entry.score || 0}</span></div>`;
+    }).join('');
+  } else {
+    deathRankList.innerHTML = '<div style="text-align:center;color:rgb(191,197,208);padding:12px;">'+t('no_data')+'</div>';
   }
 }
 
@@ -627,6 +652,9 @@ function failRun(reasonKey) {
   // Show death overlay
   deathScore.textContent = state.score;
   deathOverlay.style.display = 'flex';
+
+  // Load and display global leaderboard
+  loadDeathLeaderboard();
 }
 function flap() {
   if(state.status==='dead') return;
@@ -868,6 +896,7 @@ changeNameBtn.addEventListener('click', function() {
 // Restart from death button
 restartFromDeathBtn.addEventListener('click', function() {
   deathOverlay.style.display = 'none';
+  deathLeaderboard.style.display = 'none';
   resetRun();
   startRun();
 });
