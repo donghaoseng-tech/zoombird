@@ -252,6 +252,7 @@ canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-acti
       <label for="registerPlayerName" id="registrationLabel" style="font-size: 14px; color: rgb(212, 214, 220); font-family: 'Montserrat','Arial Black','PingFang SC','Microsoft YaHei',sans-serif;">请输入你的昵称:</label>
       <input type="text" id="registerPlayerName" maxlength="20" placeholder="匿名玩家" style="padding: 12px 16px; font-size: 16px; font-family: 'Montserrat','Arial Black','PingFang SC','Microsoft YaHei',sans-serif; background: rgba(15, 18, 24, 0.9); border: 1px solid rgba(132, 136, 145, 0.5); border-radius: 24px; color: rgb(232, 236, 242); text-align: center; outline: none;" />
       <button id="registerBtn" class="dlg-btn" type="button">开始游戏</button>
+      <button id="guestModeBtn" class="dlg-btn dlg-btn-secondary" type="button" style="padding: 10px 16px; font-size: 15px; font-family: 'Montserrat','Arial Black','PingFang SC','Microsoft YaHei',sans-serif; background: rgba(132, 136, 145, 0.4); border: 1px solid rgba(132, 136, 145, 0.6); border-radius: 24px; color: rgb(232, 236, 242); cursor: pointer;">游客模式</button>
     </div>
   </div>
 </div>
@@ -273,6 +274,7 @@ const globalRankList = document.getElementById('globalRankList');
 const registrationModal = document.getElementById('registrationModal');
 const registerPlayerName = document.getElementById('registerPlayerName');
 const registerBtn = document.getElementById('registerBtn');
+const guestModeBtn = document.getElementById('guestModeBtn');
 const currentPlayerNameEl = document.getElementById('currentPlayerName');
 const changeNameBtn = document.getElementById('changeNameBtn');
 const labelPlayerEl = document.getElementById('labelPlayer');
@@ -296,11 +298,15 @@ const API_ENDPOINTS = {
   submitScore: '/api/score'
 };
 const PLAYER_NAME_KEY = 'zoombird_player_name';
+const PLAYER_MODE_KEY = 'zoombird_player_mode';
+const PLAYER_MODE_GUEST = 'guest';
+const PLAYER_MODE_REGISTERED = 'registered';
 const LANG_KEY = 'zoombird_lang';
 const DEATH_LEADERBOARD_COLLAPSED_LIMIT = 3;
 const DEATH_LEADERBOARD_EXPANDED_LIMIT = 10;
 let isDeathLeaderboardExpanded = false;
 let deathLeaderboardRequestToken = 0;
+let deathLeaderboardSourceData = [];
 
 const THEME = {
   zoomGreen: 'rgb(164, 214, 69)',
@@ -356,8 +362,9 @@ const I18N = {
     label_player: '玩家', not_logged_in: '未登录', btn_change_name: '更改昵称',
     registration_title: '欢迎来到 ZOOMBIRD', registration_label: '请输入你的昵称:',
     btn_start_game: '开始游戏', btn_submit_score: '提交分数到排行榜', btn_restart: '重新开始',
+    btn_guest_mode: '游客模式',
     death_score_label: '得分', placeholder_name: '匿名玩家',
-    death_rank_expand_hint: '点击查看更多（前10）', death_rank_collapse_hint: '点击收起（前3）',
+    death_rank_expand_hint: '点击查看更多', death_rank_collapse_hint: '点击收起',
     checking: '检查中...', error_empty_name: '请输入昵称', error_name_exists: '该昵称已被使用，请选择其他昵称',
     global_rank_title: '🌍 全球排行榜', loading: '加载中...', no_data: '暂无数据', connection_error: '暂时无法连接到服务器'
   },
@@ -374,8 +381,9 @@ const I18N = {
     label_player: 'Player', not_logged_in: 'Not logged in', btn_change_name: 'Change Name',
     registration_title: 'Welcome to ZOOMBIRD', registration_label: 'Enter your player name:',
     btn_start_game: 'Start Game', btn_submit_score: 'Submit Score', btn_restart: 'Restart',
+    btn_guest_mode: 'Guest Mode',
     death_score_label: 'Score', placeholder_name: 'Anonymous',
-    death_rank_expand_hint: 'Tap to view top 10', death_rank_collapse_hint: 'Tap to collapse to top 3',
+    death_rank_expand_hint: 'Tap to view more', death_rank_collapse_hint: 'Tap to collapse',
     checking: 'Checking...', error_empty_name: 'Please enter a name', error_name_exists: 'This name is already used, please choose another one',
     global_rank_title: '🌍 Global Leaderboard', loading: 'Loading...', no_data: 'No data', connection_error: 'Unable to connect to server'
   }
@@ -454,6 +462,11 @@ function renderGlobalLeaderboard(leaderboardData) {
 }
 
 async function handleScoreSubmit() {
+  if (isGuestMode()) {
+    submitResult.style.display = 'none';
+    return;
+  }
+
   const playerName = getPlayerName() || '匿名玩家';
   const score = state.score;
 
@@ -486,8 +499,7 @@ async function handleScoreSubmit() {
 // Auto-submit score to global leaderboard
 async function autoSubmitScore() {
   const playerName = getPlayerName();
-  if (!playerName) {
-    console.log('No player name set, skipping auto-submit');
+  if (!playerName || isGuestMode()) {
     return;
   }
 
@@ -521,8 +533,21 @@ function updateDeathLeaderboardUIState() {
   }
 }
 
+function renderDeathLeaderboard(leaderboardData, limit) {
+  const visibleData = Array.isArray(leaderboardData) ? leaderboardData.slice(0, limit) : [];
+  if (!visibleData.length) {
+    deathRankList.innerHTML = '<div style="text-align:center;color:rgb(191,197,208);padding:12px;">'+t('no_data')+'</div>';
+    return;
+  }
+  deathRankList.innerHTML = visibleData.map((entry, index) => {
+    const rank = entry.rank || (index + 1);
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
+    return `<div class="rank-item"><span class="rank-name">${medal} ${entry.name || 'Anonymous'}</span><span class="rank-score">${entry.score || 0}</span></div>`;
+  }).join('');
+}
+
 // Load leaderboard for death overlay
-async function loadDeathLeaderboard(limit) {
+async function loadDeathLeaderboard(limit, forceRefresh = false) {
   const targetLimit = typeof limit === 'number'
     ? limit
     : (isDeathLeaderboardExpanded ? DEATH_LEADERBOARD_EXPANDED_LIMIT : DEATH_LEADERBOARD_COLLAPSED_LIMIT);
@@ -532,18 +557,20 @@ async function loadDeathLeaderboard(limit) {
   deathRankList.innerHTML = '<div style="text-align:center;color:rgb(191,197,208);padding:12px;">'+t('loading')+'</div>';
 
   const requestToken = ++deathLeaderboardRequestToken;
-  const result = await fetchGlobalLeaderboard(targetLimit);
-  if (requestToken !== deathLeaderboardRequestToken) return;
+  const shouldFetch = forceRefresh || !deathLeaderboardSourceData.length;
+  if (shouldFetch) {
+    const result = await fetchGlobalLeaderboard(DEATH_LEADERBOARD_EXPANDED_LIMIT);
+    if (requestToken !== deathLeaderboardRequestToken) return;
 
-  if (result.success && result.data && result.data.length > 0) {
-    deathRankList.innerHTML = result.data.map((entry, index) => {
-      const rank = entry.rank || (index + 1);
-      const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
-      return `<div class="rank-item"><span class="rank-name">${medal} ${entry.name || 'Anonymous'}</span><span class="rank-score">${entry.score || 0}</span></div>`;
-    }).join('');
-  } else {
-    deathRankList.innerHTML = '<div style="text-align:center;color:rgb(191,197,208);padding:12px;">'+t('no_data')+'</div>';
+    if (result.success && Array.isArray(result.data)) {
+      deathLeaderboardSourceData = result.data;
+    } else if (forceRefresh) {
+      deathLeaderboardSourceData = [];
+    }
   }
+
+  if (requestToken !== deathLeaderboardRequestToken) return;
+  renderDeathLeaderboard(deathLeaderboardSourceData, targetLimit);
 }
 
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
@@ -564,9 +591,30 @@ function getPlayerName() {
   }
 }
 
-function setPlayerName(name) {
+function getPlayerMode() {
+  try {
+    const mode = localStorage.getItem(PLAYER_MODE_KEY);
+    if (mode === PLAYER_MODE_GUEST || mode === PLAYER_MODE_REGISTERED) {
+      return mode;
+    }
+  } catch (e) {}
+  return getPlayerName() ? PLAYER_MODE_REGISTERED : null;
+}
+
+function isGuestMode() {
+  return getPlayerMode() === PLAYER_MODE_GUEST;
+}
+
+function generateGuestName() {
+  const randomDigits = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
+  return `游客${randomDigits}`;
+}
+
+function setPlayerName(name, mode = PLAYER_MODE_REGISTERED) {
+  const safeMode = mode === PLAYER_MODE_GUEST ? PLAYER_MODE_GUEST : PLAYER_MODE_REGISTERED;
   try {
     localStorage.setItem(PLAYER_NAME_KEY, name);
+    localStorage.setItem(PLAYER_MODE_KEY, safeMode);
     updatePlayerNameDisplay();
   } catch (e) {}
 }
@@ -602,6 +650,9 @@ function updateAllUIText() {
   registrationLabel.textContent = t('registration_label');
   registerPlayerName.placeholder = t('placeholder_name');
   registerBtn.textContent = t('btn_start_game');
+  if (guestModeBtn) {
+    guestModeBtn.textContent = t('btn_guest_mode');
+  }
   globalRankTitle.textContent = t('global_rank_title');
   deathRankTitle.textContent = t('global_rank_title');
   deathTitle.textContent = t('overlay_dead');
@@ -829,7 +880,7 @@ function failRun(reasonKey) {
   isDeathLeaderboardExpanded = false;
 
   // Load and display global leaderboard
-  loadDeathLeaderboard(DEATH_LEADERBOARD_COLLAPSED_LIMIT);
+  loadDeathLeaderboard(DEATH_LEADERBOARD_COLLAPSED_LIMIT, true);
 }
 function flap() {
   if(state.status==='dead') return;
@@ -1049,9 +1100,17 @@ registerBtn.addEventListener('click', async function() {
     return;
   }
 
-  setPlayerName(name);
+  setPlayerName(name, PLAYER_MODE_REGISTERED);
   hideRegistrationModal();
 });
+
+if (guestModeBtn) {
+  guestModeBtn.addEventListener('click', function() {
+    const guestName = generateGuestName();
+    setPlayerName(guestName, PLAYER_MODE_GUEST);
+    hideRegistrationModal();
+  });
+}
 
 registerPlayerName.addEventListener('keypress', async function(e) {
   if (e.key === 'Enter') {
@@ -1075,7 +1134,7 @@ registerPlayerName.addEventListener('keypress', async function(e) {
       return;
     }
 
-    setPlayerName(name);
+    setPlayerName(name, PLAYER_MODE_REGISTERED);
     hideRegistrationModal();
   }
 });
