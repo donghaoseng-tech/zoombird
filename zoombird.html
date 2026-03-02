@@ -687,7 +687,7 @@ button:active { transform: translateY(1px); }
       <!-- User info display -->
       <div class="user-info">
         <span id="labelPlayer">玩家</span>: <span id="currentPlayerName">未登录</span>
-        <button id="changeNameBtn" class="secondary" type="button" style="margin-left: 10px; padding: 6px 12px; font-size: 0.85rem;">更改昵称</button>
+        <button id="changeNameBtn" class="secondary" type="button" style="display: none; margin-left: 10px; padding: 6px 12px; font-size: 0.85rem;">更改昵称</button>
       </div>
 
       <div id="gameShell" class="game-shell">
@@ -1844,6 +1844,7 @@ function updatePlayerNameDisplay() {
 }
 
 function showRegistrationModal() {
+  if (getPlayerName()) return;
   registrationModal.style.display = 'flex';
   registerPlayerName.value = '';
   setTimeout(() => registerPlayerName.focus(), 100);
@@ -2604,7 +2605,7 @@ registerPlayerName.addEventListener('keypress', async function(e) {
 
 // Change name button
 changeNameBtn.addEventListener('click', function() {
-  showRegistrationModal();
+  return;
 });
 
 fullscreenBtn.addEventListener('click', function() {
